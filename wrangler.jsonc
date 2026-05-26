@@ -1,0 +1,19 @@
+{
+	// Wrangler config for docs.aggregator.gg.
+	//
+	// Why this file exists: without it, Cloudflare Pages' new Workers-based
+	// deploy flow runs `astro add cloudflare` automatically and injects the
+	// @astrojs/cloudflare SSR adapter, which breaks the build because
+	// starlight-openapi pulls node:fs / node:url that aren't available in
+	// the Workers runtime. Declaring `assets.directory` explicitly tells
+	// wrangler "this is static assets, do not touch the framework config".
+	//
+	// See ADR-027 in aggregator-gg/aggregator for the architecture rationale.
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "aggregator-docs",
+	"compatibility_date": "2026-05-26",
+	"assets": {
+		"directory": "./dist",
+		"not_found_handling": "404-page"
+	}
+}

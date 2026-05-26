@@ -6,6 +6,11 @@ import starlightOpenAPI, { openAPISidebarGroups } from 'starlight-openapi';
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://docs.aggregator.gg',
+	// Pure static output. Cloudflare Pages serves dist/ as static assets via
+	// wrangler.jsonc — do NOT auto-add @astrojs/cloudflare adapter. The
+	// adapter pulls starlight-openapi into the Workers runtime which fails
+	// on node:fs / node:url that the OpenAPI parser needs.
+	output: 'static',
 	integrations: [
 		starlight({
 			title: 'The Aggregator',
