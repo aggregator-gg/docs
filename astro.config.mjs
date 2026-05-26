@@ -25,7 +25,10 @@ export default defineConfig({
 				starlightOpenAPI([
 					{
 						base: 'api/v1',
-						schema: '../repo/docs/api/openapi.yaml',
+						// Spec is synced from aggregator-gg/aggregator:docs/api/openapi.yaml
+						// via .github/workflows/sync.yml (Core merge → docs PR).
+						// See ADR-027 Decision 2 in the aggregator repo.
+						schema: './openapi/aggregator.yaml',
 						sidebar: {
 							label: 'API Reference',
 							collapsed: false,

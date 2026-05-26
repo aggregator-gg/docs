@@ -1,0 +1,613 @@
+openapi: 3.1.0
+info:
+  title: The Aggregator Machine API
+  version: '1'
+  description: |
+    B2B game aggregation platform. Server-to-server REST API for operators to
+    browse the game catalog, launch real-money and demo sessions, and query
+    transactions.
+
+    **Authentication**: Bearer token via `Authorization` header. Keys are
+    prefixed `sk_live_*` (production) or `sk_test_*` (sandbox).
+
+    **Versioning**: Hybrid path-version (`/v1/`) plus `Aggregator-Version`
+    header for additive minor revisions. See
+    https://docs.aggregator.gg/resources/versioning/.
+
+    **Idempotency**: POST endpoints touching financial state require an
+    `Idempotency-Key` header. Cached responses replay for 24 hours.
+
+    This spec is the source of truth. CI rejects route changes that drift
+    from this file via a schemathesis conformance test.
+  contact:
+    name: Aggregator API support
+    url: https://docs.aggregator.gg/resources/support
+  license:
+    name: Proprietary
+servers:
+  - url: https://api.aggregator.gg/v1
+    description: Production
+  - url: https://api.aggregator.gg/v1
+    description: Staging
+
+security:
+  - bearerAuth: []
+
+paths:
+  /games:
+    get:
+      summary: List games
+      description: |
+        List available games with optional filtering, search, and pagination.
+        Results are scoped to the games enabled for the calling operator's
+        configured providers and selections.
+      tags: [Games]
+      operationId: listGames
+      parameters:
+        - name: provider
+          in: query
+          schema: { type: string, example: truelabs }
+          description: Filter by provider code (e.g. `truelabs`, `bgaming`).
+        - name: provider_game_id
+          in: query
+          schema: { type: string }
+          description: Filter by the provider's own game identifier.
+        - name: type
+          in: query
+          schema: { type: string, example: slots }
+          description: Filter by game type (`slots`, `table`, `crash`, ...).
+        - name: volatility
+          in: query
+          schema: { type: string, enum: [low, medium, high] }
+        - name: rtp_min
+          in: query
+          schema: { type: number, format: float, minimum: 0, maximum: 100, example: 95.0 }
+        - name: rtp_max
+          in: query
+          schema: { type: number, format: float, minimum: 0, maximum: 100, example: 97.5 }
+        - name: features
+          in: query
+          schema: { type: string }
+          description: Comma-separated feature tags (e.g. `bonus_buy,megaways`).
+        - name: search
+          in: query
+          schema: { type: string }
+          description: Full-text search across game names.
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [name, -name, rtp, -rtp, release_date, -release_date, sort_order, -sort_order, created_at, -created_at]
+          description: Sort field; prefix with `-` for descending.
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: per_page
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        '200':
+          description: Page of games.
+          headers:
+            X-API-Mode: { $ref: '#/components/headers/XApiMode' }
+            X-RateLimit-Limit: { $ref: '#/components/headers/RateLimitLimit' }
+            X-RateLimit-Remaining: { $ref: '#/components/headers/RateLimitRemaining' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameList'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /games/{game_id}:
+    get:
+      summary: Get a game
+      description: Retrieve a single game by its UUID.
+      tags: [Games]
+      operationId: getGame
+      parameters:
+        - name: game_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: The requested game.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [game]
+                properties:
+                  game: { $ref: '#/components/schemas/Game' }
+        '400':
+          description: '`game_id` is not a valid UUID.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: No game found with that ID.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /sessions:
+    post:
+      summary: Create a real-money session
+      description: |
+        Create a real-money game session. The player is redirected to the
+        returned `game_url` to begin playing. The URL expires in 20 seconds —
+        create the session immediately before redirecting.
+
+        Requires `Idempotency-Key` header. Retries with the same key within
+        24 hours return the cached response.
+      tags: [Sessions]
+      operationId: createSession
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSessionRequest'
+      responses:
+        '201':
+          description: Session created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '400':
+          description: Validation failed or missing/invalid `Idempotency-Key` header.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '403':
+          description: |
+            Operator not configured for this provider, game not allowed for
+            operator, jurisdiction blocked, or player self-excluded.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Game not found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '502':
+          description: Provider returned an error when creating the session.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '503':
+          description: Provider temporarily unavailable.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { $ref: '#/components/responses/IdempotencyConflict' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /demo-sessions:
+    post:
+      summary: Create a demo session
+      description: |
+        Launch a demo game session. No real-money wallet involvement; no bet
+        or win callbacks emitted. Useful for sandbox testing or
+        prospect-facing free-play surfaces.
+      tags: [Sessions]
+      operationId: createDemoSession
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [game_id, lang]
+              properties:
+                game_id:
+                  type: string
+                  format: uuid
+                lang:
+                  type: string
+                  pattern: '^[a-z]{2}$'
+                  example: en
+                return_url:
+                  type: string
+                  format: uri
+      responses:
+        '201':
+          description: Demo session created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '404':
+          description: Game not found or does not support demo mode.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /sessions/{session_id}:
+    get:
+      summary: Get session details
+      description: Retrieve metadata about a previously-created session.
+      tags: [Sessions]
+      operationId: getSession
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Session details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionDetail'
+        '404':
+          description: Session not found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /transactions:
+    get:
+      summary: List transactions
+      description: |
+        List bet and win transactions for a session or player, with optional
+        time-range filtering and pagination. Used for reconciliation against
+        your wallet ledger.
+      tags: [Transactions]
+      operationId: listTransactions
+      parameters:
+        - name: session_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: player_id
+          in: query
+          schema: { type: string, maxLength: 128 }
+        - name: type
+          in: query
+          schema: { type: string, enum: [bet, win, refund] }
+        - name: from
+          in: query
+          schema: { type: string, format: date-time }
+          description: Inclusive lower bound on `created_at`.
+        - name: to
+          in: query
+          schema: { type: string, format: date-time }
+          description: Exclusive upper bound on `created_at`.
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: per_page
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        '200':
+          description: Page of transactions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionList'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /health:
+    get:
+      summary: Liveness probe
+      description: Returns 200 if the API process is up.
+      tags: [Health]
+      operationId: getHealth
+      security: []
+      responses:
+        '200':
+          description: Service is alive.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+
+  /ready:
+    get:
+      summary: Readiness probe
+      description: Returns 200 if the API can serve traffic (DB reachable, etc.).
+      tags: [Health]
+      operationId: getReady
+      security: []
+      responses:
+        '200':
+          description: Service is ready.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    enum: [ready]
+        '503':
+          description: Service is not ready (one or more dependencies unreachable).
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: sk_live_* or sk_test_*
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        maxLength: 128
+        pattern: '^[A-Za-z0-9_-]+$'
+      description: |
+        Unique key for idempotent retry semantics. Retries within 24 hours
+        return the cached response. Same key with a different body returns
+        409 Conflict.
+
+  headers:
+    XApiMode:
+      schema:
+        type: string
+        enum: [live, test]
+      description: Echoes whether the key prefix is `sk_live_*` or `sk_test_*`.
+    RateLimitLimit:
+      schema: { type: integer }
+      description: Rate-limit ceiling for this key on this endpoint family.
+    RateLimitRemaining:
+      schema: { type: integer }
+      description: Calls remaining in the current window.
+
+  responses:
+    Unauthorized:
+      description: Missing, invalid, or revoked API key.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    RateLimited:
+      description: Rate limit exceeded; consult `Retry-After`.
+      headers:
+        Retry-After:
+          schema: { type: integer }
+          description: Seconds to wait before retry.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    IdempotencyConflict:
+      description: Idempotency key reused with a different request body.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    Game:
+      type: object
+      required: [id, provider_code, provider_game_id, name, category, has_demo]
+      properties:
+        id:
+          type: string
+          format: uuid
+        provider_game_id:
+          type: string
+        provider_code:
+          type: string
+          example: truelabs
+        name:
+          type: string
+        brand:
+          type: string
+        category:
+          type: string
+        game_type:
+          type: string
+          example: slots
+        rtp:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+        volatility:
+          type: string
+          enum: [low, medium, high]
+        has_mobile:
+          type: boolean
+        has_desktop:
+          type: boolean
+        has_demo:
+          type: boolean
+        thumbnail_url:
+          type: string
+          format: uri
+        blocked_countries:
+          type: array
+          items:
+            type: string
+            pattern: '^[A-Z]{2}$'
+        features:
+          type: array
+          items: { type: string }
+        release_date:
+          type: string
+          format: date
+
+    GameList:
+      type: object
+      required: [games, total, page, per_page]
+      properties:
+        games:
+          type: array
+          items: { $ref: '#/components/schemas/Game' }
+        total: { type: integer }
+        page: { type: integer }
+        per_page: { type: integer }
+
+    CreateSessionRequest:
+      type: object
+      required: [game_id, player_id, balance, currency, country]
+      properties:
+        game_id:
+          type: string
+          format: uuid
+        player_id:
+          type: string
+          maxLength: 128
+          description: Operator's internal player identifier.
+        balance:
+          type: integer
+          minimum: 0
+          description: |
+            Player's current real-money balance in minor units (e.g. cents
+            for USD/EUR/GBP). The Aggregator does not hold balances —
+            this is informational only, used for limit checks and game UX.
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+          enum: [USD, EUR, GBP, BRL, CAD, AUD, NOK, SEK, PLN, CZK, TRY, RUB, KZT, UAH]
+        country:
+          type: string
+          pattern: '^[A-Z]{2}$'
+          description: ISO 3166-1 alpha-2 country code of the player.
+        lang:
+          type: string
+          pattern: '^[a-z]{2}$'
+          example: en
+        return_url:
+          type: string
+          format: uri
+          description: URL to redirect the player after the session ends.
+
+    SessionResponse:
+      type: object
+      required: [session_id, game_url, expires_in, provider_code]
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        game_url:
+          type: string
+          format: uri
+          description: One-time-use signed URL the player is redirected to.
+        expires_in:
+          type: integer
+          description: Seconds until `game_url` becomes invalid (currently 20).
+        provider_session_uid:
+          type: string
+        provider_code:
+          type: string
+        warning:
+          type: string
+          description: Present only on `sk_test_*` responses.
+
+    SessionDetail:
+      type: object
+      required: [session_id, status, game_id, provider_code, created_at]
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [open, closed, expired]
+        game_id:
+          type: string
+          format: uuid
+        provider_code:
+          type: string
+        player_id:
+          type: string
+        currency:
+          type: string
+        country:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        closed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    Transaction:
+      type: object
+      required: [id, session_id, type, amount, currency, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        session_id:
+          type: string
+          format: uuid
+        player_id:
+          type: string
+        type:
+          type: string
+          enum: [bet, win, refund]
+        amount:
+          type: integer
+          description: Amount in minor units (always non-negative; `type` discriminates direction).
+        currency:
+          type: string
+        provider_code:
+          type: string
+        provider_round_id:
+          type: string
+        operator_status:
+          type: integer
+          description: HTTP status returned by the operator's callback handler.
+        status:
+          type: string
+          enum: [completed, forwarded, rejected, error]
+        created_at:
+          type: string
+          format: date-time
+
+    TransactionList:
+      type: object
+      required: [transactions, total, page, per_page]
+      properties:
+        transactions:
+          type: array
+          items: { $ref: '#/components/schemas/Transaction' }
+        total: { type: integer }
+        page: { type: integer }
+        per_page: { type: integer }
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              pattern: '^E[0-9A-F][0-9]{3}$'
+              description: Machine-parseable error code. See https://docs.aggregator.gg/resources/error-codes/.
+              example: E0001
+            message:
+              type: string
+            request_id:
+              type: string
+              description: Correlation ID for support escalation.
+            details:
+              type: object
+              additionalProperties: true
