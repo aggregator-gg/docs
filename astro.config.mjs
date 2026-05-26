@@ -22,9 +22,11 @@ export default defineConfig({
 			social: [
 				{ icon: 'github', label: 'GitHub', href: 'https://github.com/aggregator-gg' },
 			],
-			editLink: {
-				baseUrl: 'https://github.com/aggregator-gg/docs/edit/main/',
-			},
+			// Edit-this-page intentionally disabled. The repo is public for
+			// SEO + indexability, but the docs site is editorial — changes
+			// land via internal PRs, not community drive-by edits. If we
+			// want to invite community contributions later, re-enable
+			// `editLink.baseUrl` here.
 			customCss: ['./src/styles/custom.css'],
 			plugins: [
 				starlightOpenAPI([
