@@ -1,0 +1,471 @@
+---
+title: "Wallet Callback Integration Guide"
+description: "Your server receives wallet events (bet, win, refund) from The Aggregator whenever a player interacts with a game. This guide covers the callback payload, signature verification, expected responses, retry behavior, and go-live checklist."
+---
+
+## How Callbacks Work
+
+1. A player opens a game through your platform via The Aggregator.
+2. The game provider sends a callback to The Aggregator at `POST /callbacks/{provider_code}/{action}`.
+3. The Aggregator verifies the provider's signature, records the transaction, and forwards a normalized payload to your configured `callback_url`.
+4. Your server processes the wallet event (debit or credit the player's balance) and returns a JSON response.
+
+```
+Player -> Game Provider -> The Aggregator -> Your Server
+                                               |
+                          <- response <--------+
+```
+
+The Aggregator acts as a normalizer: regardless of which game provider originates the event, you always receive the same payload shape and signing scheme.
+
+---
+
+## Forward Payload
+
+The Aggregator sends a `POST` request to your `callback_url` with the following format.
+
+### Headers
+
+| Header | Value |
+|--------|-------|
+| `Content-Type` | `application/json` |
+| `X-SIGNATURE` | HMAC-SHA256 hex digest of the raw JSON body, keyed with your `callback_secret` |
+
+### Body
+
+```json
+{
+  "action": "BET-WIN",
+  "transaction_type": "bet",
+  "transaction_id": "provider-unique-tx-id",
+  "amount": "1.50",
+  "currency": "EUR",
+  "player_id": "player-123",
+  "provider_code": "truelabs",
+  "game": "gates-of-olympus",
+  "game_id": "550e8400-e29b-41d4-a716-446655440000",
+  "round_id": "round-123",
+  "finished": false,
+  "session_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+}
+```
+
+### Field Reference
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `action` | `string` | Provider-specific action label (e.g. `"BET-WIN"`, `"BET"`, `"WIN"`). Use `transaction_type` for branching logic. |
+| `transaction_type` | `string` | One of `"bet"`, `"win"`, or `"refund"`. This is the field you use to decide how to update the player's balance. |
+| `transaction_id` | `string` | Provider-unique identifier for this transaction. Use as your idempotency key. |
+| `amount` | `string` | Decimal string representing the transaction amount (e.g. `"1.50"`). Always positive. |
+| `currency` | `string` | ISO 4217 currency code (e.g. `"EUR"`, `"USD"`). |
+| `player_id` | `string` | The player identifier you provided when launching the game session. |
+| `provider_code` | `string` | Identifies the game provider (e.g. `"truelabs"`, `"bgaming"`). |
+| `game` | `string` | Game slug or name from the provider. |
+| `game_id` | `string` | UUID of the game in The Aggregator's catalog. |
+| `round_id` | `string` | Groups related transactions into a single game round. |
+| `finished` | `boolean` | `true` on the final callback of a round. |
+| `session_id` | `string` | UUID of the game session in The Aggregator. |
+
+---
+
+## Signature Verification
+
+Every forwarded callback is signed with your `callback_secret` using HMAC-SHA256. You must verify the signature before processing any callback.
+
+### Algorithm
+
+1. Read the raw request body as bytes. Do not parse or re-serialize it first.
+2. Compute the HMAC-SHA256 of those bytes using your `callback_secret` as the key.
+3. Compare the resulting hex digest with the value in the `X-SIGNATURE` header using a **constant-time comparison** function.
+
+```
+expected = HMAC-SHA256(raw_body_bytes, callback_secret)
+valid    = constant_time_compare(expected, request.headers["X-SIGNATURE"])
+```
+
+**Important**: The body is serialized with compact JSON (no spaces after separators). If you re-serialize the parsed JSON to verify the signature, the result will not match. Always use the raw bytes.
+
+---
+
+## Expected Response
+
+Your server must return **HTTP 200** with a JSON body containing the player's updated balance:
+
+```json
+{
+  "balance": 9850,
+  "currency": "EUR",
+  "player_id": "player-123"
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `balance` | `number` | Player's balance **after** applying the transaction, in minor units (cents). |
+| `currency` | `string` | ISO 4217 currency code. Must match the request currency. |
+| `player_id` | `string` | Echo back the `player_id` from the request. |
+
+If your endpoint returns a non-2xx status or non-JSON body, The Aggregator treats it as a failure and triggers the retry and circuit breaker mechanisms described below.
+
+---
+
+## Transaction Types
+
+### bet
+
+The player places a bet. **Debit** the player's balance by `amount`.
+
+```
+player.balance -= parse_decimal(callback.amount)
+```
+
+### win
+
+The player wins. **Credit** the player's balance by `amount`.
+
+```
+player.balance += parse_decimal(callback.amount)
+```
+
+### refund
+
+The round was cancelled by the provider. **Reverse the original bet** -- credit the player's balance by `amount`.
+
+```
+player.balance += parse_decimal(callback.amount)
+```
+
+A refund always refers to a previously processed `bet` with the same `round_id`. If you have not processed the original bet, you can safely ignore the refund.
+
+---
+
+## Round Lifecycle
+
+A game round follows a predictable sequence:
+
+```
+bet (finished=false)
+  -> win (finished=false)     # optional, may repeat
+  -> win (finished=true)      # final callback closes the round
+```
+
+- A round **starts** with a `bet` callback where `finished=false`.
+- Zero or more `win` callbacks follow within the same `round_id`.
+- The **final** callback in a round has `finished=true`.
+- If a round is **cancelled**, a `refund` callback reverses the original bet.
+
+You can use `round_id` + `finished` to track round state on your side, but it is not required. Processing each callback individually by `transaction_id` is sufficient.
+
+---
+
+## Idempotency
+
+The Aggregator enforces idempotency on its side using a body hash and signature. If a duplicate callback arrives from the provider, The Aggregator replays the cached response from your server instead of forwarding the request again.
+
+**You must also implement idempotency on your side.** Use `transaction_id` as the idempotency key:
+
+1. Before processing a callback, check whether you have already processed a transaction with this `transaction_id`.
+2. If yes, return the same response you returned the first time. Do not debit or credit the player again.
+3. If no, process the transaction and store the result keyed by `transaction_id`.
+
+This protects against network-level retries and edge cases where The Aggregator's deduplication does not cover (e.g., retry queue deliveries).
+
+---
+
+## Retry Behavior
+
+If your endpoint returns an HTTP 5xx status or is unreachable (connection error, timeout), The Aggregator enqueues the callback for retry.
+
+### Retry Schedule
+
+| Attempt | Delay |
+|---------|-------|
+| 1 | 5 seconds |
+| 2 | 30 seconds |
+| 3 | 2 minutes |
+| 4 | 10 minutes |
+| 5 | 1 hour |
+
+After 5 failed attempts, the callback moves to a **dead-letter queue** and is no longer retried. Contact support to replay dead-lettered callbacks.
+
+### Timeouts
+
+- **Forward timeout**: 5 seconds. Your server must respond within 5 seconds on the initial callback.
+- **Retry timeout**: 10 seconds per retry attempt.
+
+If your processing takes longer than 5 seconds, return HTTP 200 immediately with the current balance and process asynchronously. Alternatively, optimize your handler to respond within the timeout.
+
+---
+
+## Circuit Breaker
+
+The Aggregator uses a per-operator circuit breaker to protect both your infrastructure and the platform from cascading failures.
+
+### States
+
+| State | Behavior |
+|-------|----------|
+| **Closed** | Normal operation. Failures are counted. |
+| **Open** | All callbacks are rejected immediately and queued for retry. No requests reach your server. |
+| **Half-Open** | A single probe request is allowed through. If it succeeds, the circuit closes. If it fails, the circuit reopens. |
+
+### Thresholds
+
+| Parameter | Default | Env Override |
+|-----------|---------|--------------|
+| Failure threshold | 5 consecutive 5xx responses | `CB_FAILURE_THRESHOLD` |
+| Recovery timeout | 30 seconds | `CB_RECOVERY_TIMEOUT_S` |
+| Max concurrent forwards | 10 per operator | `CB_BULKHEAD_MAX_CONCURRENT` |
+
+When the circuit is open, callbacks accumulate in the retry queue and are delivered once the circuit recovers. You do not lose transactions.
+
+---
+
+## Configuration
+
+You configure your `callback_url` and `callback_secret` through the operator cabinet setup wizard or by contacting support.
+
+- **callback_url**: The HTTPS endpoint on your server that receives wallet callbacks. Must be publicly reachable. Internal/private IP addresses are blocked (SSRF protection).
+- **callback_secret**: A shared secret used to sign forwarded payloads. Encrypted at rest with AES-256-GCM. Treat it like a password -- never log it, never commit it to version control.
+
+---
+
+## Code Examples
+
+### Node.js (Express)
+
+```javascript
+const express = require("express");
+const crypto = require("crypto");
+
+const app = express();
+
+// IMPORTANT: Use raw body for signature verification
+app.use("/callbacks", express.raw({ type: "application/json" }));
+
+const CALLBACK_SECRET = process.env.CALLBACK_SECRET;
+
+app.post("/callbacks", (req, res) => {
+  // 1. Verify signature
+  const signature = req.headers["x-signature"];
+  if (!signature) {
+    return res.status(401).json({ error: "Missing signature" });
+  }
+
+  const expected = crypto
+    .createHmac("sha256", CALLBACK_SECRET)
+    .update(req.body) // req.body is a Buffer when using express.raw()
+    .digest("hex");
+
+  if (!crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))) {
+    return res.status(401).json({ error: "Invalid signature" });
+  }
+
+  // 2. Parse the callback
+  const callback = JSON.parse(req.body.toString());
+
+  // 3. Idempotency check
+  const existing = getProcessedTransaction(callback.transaction_id);
+  if (existing) {
+    return res.json(existing.response);
+  }
+
+  // 4. Process by transaction type
+  let balance;
+  switch (callback.transaction_type) {
+    case "bet":
+      balance = debitPlayer(callback.player_id, callback.amount, callback.currency);
+      break;
+    case "win":
+    case "refund":
+      balance = creditPlayer(callback.player_id, callback.amount, callback.currency);
+      break;
+    default:
+      return res.status(400).json({ error: `Unknown type: ${callback.transaction_type}` });
+  }
+
+  // 5. Build response
+  const response = {
+    balance: balance,       // integer, minor units (cents)
+    currency: callback.currency,
+    player_id: callback.player_id,
+  };
+
+  // 6. Store for idempotency
+  storeProcessedTransaction(callback.transaction_id, { response });
+
+  return res.json(response);
+});
+
+app.listen(3000, () => console.log("Callback server listening on :3000"));
+```
+
+### Python (Flask)
+
+```python
+import hashlib
+import hmac
+import json
+import os
+
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+CALLBACK_SECRET = os.environ["CALLBACK_SECRET"]
+
+
+@app.post("/callbacks")
+def handle_callback():
+    # 1. Verify signature
+    signature = request.headers.get("X-SIGNATURE", "")
+    raw_body = request.get_data()  # raw bytes, not parsed
+
+    expected = hmac.new(
+        CALLBACK_SECRET.encode("utf-8"),
+        raw_body,
+        hashlib.sha256,
+    ).hexdigest()
+
+    if not hmac.compare_digest(expected, signature):
+        return jsonify({"error": "Invalid signature"}), 401
+
+    # 2. Parse the callback
+    callback = json.loads(raw_body)
+
+    # 3. Idempotency check
+    existing = get_processed_transaction(callback["transaction_id"])
+    if existing:
+        return jsonify(existing["response"])
+
+    # 4. Process by transaction type
+    tx_type = callback["transaction_type"]
+    amount = callback["amount"]
+    player_id = callback["player_id"]
+    currency = callback["currency"]
+
+    if tx_type == "bet":
+        balance = debit_player(player_id, amount, currency)
+    elif tx_type in ("win", "refund"):
+        balance = credit_player(player_id, amount, currency)
+    else:
+        return jsonify({"error": f"Unknown type: {tx_type}"}), 400
+
+    # 5. Build response
+    response = {
+        "balance": balance,       # integer, minor units (cents)
+        "currency": currency,
+        "player_id": player_id,
+    }
+
+    # 6. Store for idempotency
+    store_processed_transaction(callback["transaction_id"], {"response": response})
+
+    return jsonify(response)
+```
+
+---
+
+## Troubleshooting
+
+### Signature Mismatch (401)
+
+**Symptom**: Your signature verification fails on every callback.
+
+**Common causes**:
+
+1. **Re-serialized body**. You parsed the JSON and then re-serialized it before computing the HMAC. The Aggregator uses compact JSON (`json.dumps(data, separators=(",", ":"))`) with no whitespace. Always verify against the raw request bytes.
+2. **Wrong secret**. You are using the API key instead of the `callback_secret`. These are different values.
+3. **Encoding mismatch**. Your HMAC key must be the `callback_secret` string encoded as UTF-8 bytes. The body is raw bytes as received over the wire.
+4. **Middleware altering the body**. A proxy, WAF, or framework middleware modified the request body before your handler received it. Ensure you read the raw, unmodified body.
+
+**Debug steps**:
+
+```bash
+# Manually verify a captured callback
+echo -n '{"action":"BET","transaction_type":"bet",...}' | \
+  openssl dgst -sha256 -hmac "your_callback_secret"
+```
+
+Compare the output with the `X-SIGNATURE` header value.
+
+### Timeout (5xx or no response)
+
+**Symptom**: The Aggregator logs show `Failed to reach operator` or your callbacks are being retried.
+
+**Common causes**:
+
+1. **Slow database queries**. Your handler takes longer than 5 seconds to respond. Optimize your queries or return early and process asynchronously.
+2. **Firewall blocking inbound requests**. The Aggregator's IP addresses must be allowed through your firewall. Contact support for the current IP list.
+3. **DNS resolution failure**. Your `callback_url` hostname is not resolvable from The Aggregator's network.
+
+### Wrong Response Format
+
+**Symptom**: The Aggregator treats your response as a failure even though you return HTTP 200.
+
+**Common causes**:
+
+1. **Non-JSON response body**. Your server returns HTML (e.g., a framework error page) instead of JSON. Ensure your endpoint always returns `Content-Type: application/json`.
+2. **Missing `balance` field**. The response must include `balance` as an integer in minor units (cents). If you return the balance as a decimal string or omit it, the round may not complete correctly.
+
+### Duplicate Callbacks
+
+**Symptom**: You receive the same `transaction_id` more than once.
+
+This is expected behavior during retries. Implement idempotency using `transaction_id` as described in the Idempotency section. Return the same response you returned the first time -- do not process the transaction again.
+
+### Circuit Breaker Tripped
+
+**Symptom**: Callbacks stop arriving for a period, then resume with a burst of retries.
+
+Your endpoint returned 5 or more consecutive 5xx errors, which tripped the circuit breaker. After a 30-second cooldown, The Aggregator sends a single probe request. If it succeeds, the circuit closes and queued callbacks are delivered.
+
+**Action**: Check your server logs for the root cause of the 5xx errors. Fix the underlying issue and the circuit will recover automatically.
+
+---
+
+## Go-Live Checklist
+
+Complete every item before switching from test mode to live traffic.
+
+### Endpoint
+
+- [ ] Your `callback_url` is a publicly reachable HTTPS endpoint (not HTTP, not a private IP).
+- [ ] Your endpoint responds within 5 seconds under normal load.
+- [ ] Your endpoint returns HTTP 200 with a valid JSON body for all transaction types (`bet`, `win`, `refund`).
+
+### Security
+
+- [ ] You verify the `X-SIGNATURE` header on every request using HMAC-SHA256 with constant-time comparison.
+- [ ] You reject requests with a missing or invalid signature.
+- [ ] Your `callback_secret` is stored securely and not logged or exposed in error messages.
+
+### Idempotency
+
+- [ ] You store processed `transaction_id` values and return cached responses on duplicates.
+- [ ] You do not debit or credit the player balance more than once for the same `transaction_id`.
+
+### Balance Handling
+
+- [ ] `bet` callbacks debit the player balance.
+- [ ] `win` callbacks credit the player balance.
+- [ ] `refund` callbacks credit the player balance (reversing a previous bet).
+- [ ] The `balance` in your response is an integer in minor units (cents).
+- [ ] You handle insufficient balance gracefully for `bet` callbacks (return an appropriate error).
+
+### Error Handling
+
+- [ ] Your endpoint always returns JSON, even on errors (no HTML error pages).
+- [ ] You return 4xx for client errors (bad request, insufficient funds) and 5xx only for genuine server failures.
+- [ ] You have alerting on 5xx responses to avoid triggering the circuit breaker in production.
+
+### Testing
+
+- [ ] You have tested the full round lifecycle: `bet` -> `win` (with `finished=true`).
+- [ ] You have tested `refund` handling.
+- [ ] You have tested duplicate `transaction_id` handling (idempotency).
+- [ ] You have tested signature verification with a known body + secret pair.
+- [ ] You have tested your endpoint under the 5-second timeout constraint.

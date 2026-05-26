@@ -1,0 +1,11 @@
+# Static headers for docs.aggregator.gg.
+# Search-engine preview-URL blocking is configured at the CF Pages level
+# (Settings → Branch deploys → Production: docs.aggregator.gg only; preview
+# branches get auto-generated *.aggregator-docs.pages.dev URLs which are
+# excluded from sitemap and emit X-Robots-Tag: noindex via the build).
+# See ADR-027 Decision 8 / Resolved Decision 5 for rationale.
+
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

@@ -1,0 +1,20 @@
+{
+  "name": "aggregator-docs",
+  "description": "Public API documentation for The Aggregator (docs.aggregator.gg)",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.39.2",
+    "astro": "^6.3.1",
+    "sharp": "^0.34.5",
+    "starlight-openapi": "^0.18.0"
+  }
+}

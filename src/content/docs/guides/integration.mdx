@@ -1,0 +1,423 @@
+---
+title: "Operator Integration Guide"
+description: "Step-by-step integration walkthrough from registration to go-live."
+---
+
+This guide walks you through integrating with The Aggregator from start to go-live. After completing the steps below, you will have a working game integration that can launch real-money sessions and process wallet callbacks.
+
+**Time estimate**: 2--4 hours for a basic integration; 1--2 days for production-ready with full callback handling.
+
+**Prerequisites**:
+- An operator account in The Aggregator cabinet ([register here](https://aggregator.gg/register))
+- A server that can receive HTTPS callbacks on a public URL
+- Familiarity with REST APIs and webhook/callback patterns
+
+---
+
+## How a Game Round Works
+
+Before you start writing code, here is the full lifecycle of a single game round. Every integration you build follows this flow.
+
+```mermaid
+sequenceDiagram
+    participant Player
+    participant Operator
+    participant Aggregator
+    participant Provider
+
+    Player->>Operator: Opens game lobby
+    Operator->>Aggregator: POST /v1/sessions (game_id, player_id, balance)
+    Aggregator->>Provider: Create session
+    Provider-->>Aggregator: Session URL
+    Aggregator-->>Operator: { session_id, game_url }
+    Operator->>Player: Redirect to game_url
+
+    Note over Player, Provider: Player places a bet
+
+    Provider->>Aggregator: Bet callback
+    Aggregator->>Operator: POST {callback_url} (bet transaction)
+    Operator-->>Aggregator: 200 OK { balance: 9500 }
+    Aggregator-->>Provider: Balance confirmed
+
+    Note over Player, Provider: Player wins
+
+    Provider->>Aggregator: Win callback
+    Aggregator->>Operator: POST {callback_url} (win transaction)
+    Operator-->>Aggregator: 200 OK { balance: 12000 }
+    Aggregator-->>Provider: Balance confirmed
+
+    Player->>Operator: Closes game (redirected to return_url)
+```
+
+Key points to understand:
+
+1. **You own the wallet.** The Aggregator never holds player funds. Every bet deducts from your ledger; every win credits your ledger.
+2. **Callbacks are synchronous.** The game provider waits for your response before showing the result to the player. Your callback endpoint must respond within 5 seconds.
+3. **Idempotency is required.** You may receive the same callback more than once. Use the `transaction_id` to deduplicate.
+
+---
+
+## Step 1: Get Your Credentials
+
+1. Register as an operator at [aggregator.gg/register](https://aggregator.gg/register).
+2. Complete the KYB (Know Your Business) verification in the operator cabinet.
+3. Navigate to **Settings > API Keys** in your cabinet.
+4. Use **Get readiness** to confirm the live promotion checklist.
+5. Use **Promote to live** to create the production key when you are ready.
+6. You receive two API keys:
+
+| Key | Format | Purpose |
+|-----|--------|---------|
+| **Sandbox** | `sk_test_*` | Integration development and testing. No real money, no real providers. |
+| **Production** | `sk_live_*` | Live player traffic. Only use after completing the go-live checklist. |
+
+7. Copy your **callback secret** from the same page. You use this to verify callback signatures.
+
+> **Security**: Store your API keys and callback secret in environment variables or a secrets manager. Never commit them to source control.
+
+---
+
+## Step 2: Explore the Game Catalog
+
+Use the sandbox key to browse available games.
+
+**Request:**
+
+```bash
+curl -X GET "https://api.aggregator.gg/v1/games?per_page=5" \
+  -H "Authorization: Bearer sk_test_xxx"
+```
+
+**Response:**
+
+```json
+{
+  "games": [
+    {
+      "id": "game_abc123",
+      "name": "Book of Sun",
+      "provider_code": "truelabs",
+      "game_type": "slots",
+      "rtp": 96.5,
+      "volatility": "high",
+      "has_mobile": true,
+      "has_desktop": true,
+      "has_demo": true,
+      "thumbnail_url": "https://cdn.aggregator.gg/thumbs/book-of-sun.jpg",
+      "blocked_countries": ["US", "GB"],
+      "features": ["free_spins", "bonus_buy"]
+    }
+  ],
+  "total": 142,
+  "page": 1,
+  "per_page": 5
+}
+```
+
+**Using the SDK:**
+
+```typescript
+import { Aggregator } from "@aggregator/sdk";
+
+const aggregator = new Aggregator({ apiKey: "sk_test_xxx" });
+
+const { games, total } = await aggregator.games.list({
+  type: "slots",
+  rtp_min: 95,
+  per_page: 25,
+});
+
+console.log(`Found ${total} games`);
+```
+
+You can filter by provider, game type, volatility, RTP range, features, and full-text search. See the [full API reference](machine-api-reference.md) for all query parameters.
+
+---
+
+## Step 3: Launch a Game
+
+To launch a game for a player, create a session. The response includes a `game_url` that you redirect the player to.
+
+**Request:**
+
+```bash
+curl -X POST "https://api.aggregator.gg/v1/sessions" \
+  -H "Authorization: Bearer sk_test_xxx" \
+  -H "Idempotency-Key: launch-player-42-20260402-001" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "game_id": "game_abc123",
+    "player_id": "player_42",
+    "balance": 10000,
+    "currency": "EUR",
+    "country": "DE",
+    "lang": "de",
+    "return_url": "https://your-casino.com/lobby"
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "session_id": "sess_xyz789",
+  "game_url": "https://games.aggregator.gg/launch/sess_xyz789",
+  "expires_in": 20,
+  "provider_session_uid": "tl_session_abc",
+  "provider_code": "truelabs"
+}
+```
+
+**Using the SDK:**
+
+```typescript
+const session = await aggregator.sessions.create({
+  game_id: "game_abc123",
+  player_id: "player_42",
+  balance: 10000,
+  currency: "EUR",
+  country: "DE",
+  lang: "de",
+  return_url: "https://your-casino.com/lobby",
+});
+
+// Redirect the player
+res.redirect(session.game_url);
+```
+
+If you need stable retries across your own queue or worker boundary, pass the
+same key explicitly:
+
+```typescript
+const session = await aggregator.sessions.create(
+  {
+    game_id: "game_abc123",
+    player_id: "player_42",
+    balance: 10000,
+    currency: "EUR",
+    country: "DE",
+    lang: "de",
+    return_url: "https://your-casino.com/lobby",
+  },
+  { idempotencyKey: "launch-player-42-20260402-001" },
+);
+```
+
+**Important details:**
+
+- `balance` is in minor currency units (cents). 10000 = 100.00 EUR.
+- `country` determines jurisdiction rules. Games blocked in the player's country return a `403`.
+- `return_url` is where the player lands when they close the game. If omitted, the game closes to a blank page.
+- Sessions expire after `expires_in` seconds. Create a new session if the player returns after expiry.
+
+You can also launch demo sessions (no player credentials required):
+
+```typescript
+const demo = await aggregator.sessions.createDemo({
+  game_id: "game_abc123",
+});
+// demo.game_url opens the game in free-play mode
+```
+
+---
+
+## Step 4: Handle Wallet Callbacks
+
+When a player places a bet or receives a win, The Aggregator sends an HTTPS callback to the URL you configure in your operator cabinet under **Settings > Callback URL**.
+
+### Callback format
+
+The Aggregator sends a `POST` request with a JSON body:
+
+```json
+{
+  "transaction_id": "tx_bet_001",
+  "type": "bet",
+  "session_id": "sess_xyz789",
+  "player_id": "player_42",
+  "amount": 500,
+  "currency": "EUR",
+  "game_id": "game_abc123",
+  "provider_code": "truelabs",
+  "round_id": "round_abc",
+  "timestamp": "2026-03-30T12:00:00Z"
+}
+```
+
+**Transaction types:**
+
+| Type | Description | Your action |
+|------|-------------|-------------|
+| `bet` | Player placed a bet | Deduct `amount` from the player's balance |
+| `win` | Player won | Credit `amount` to the player's balance |
+| `refund` | A previous bet was reversed | Credit `amount` back to the player's balance |
+
+### Verify the signature
+
+Every callback includes an `X-SIGNATURE` header. Verify it before processing.
+
+The signature is an HMAC-SHA256 hex digest of the raw request body, signed with your callback secret.
+
+```typescript
+import crypto from "node:crypto";
+
+function verifySignature(
+  body: string,
+  signature: string,
+  secret: string,
+): boolean {
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(body)
+    .digest("hex");
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expected),
+  );
+}
+```
+
+> **Security**: Always use `timingSafeEqual` for signature comparison to prevent timing attacks. Reject any request with an invalid or missing signature.
+> HTTP sends `X-SIGNATURE`; Node exposes it as `req.headers["x-signature"]`.
+
+### Respond correctly
+
+Your endpoint must return a JSON response with the player's updated balance:
+
+**Success (200):**
+
+```json
+{
+  "balance": 9500
+}
+```
+
+**Error responses:**
+
+| Status | When to use |
+|--------|-------------|
+| `200` | Transaction processed successfully. Return the new balance. |
+| `402` | Insufficient funds. Only valid for `bet` transactions. The bet is not placed. |
+| `409` | Duplicate `transaction_id`. Return the same balance you returned for the original request. |
+| `500` | Internal error. The Aggregator retries the callback. |
+
+### Handle idempotency
+
+You will receive the same `transaction_id` more than once if the first request times out or fails. Your handler must:
+
+1. Check if you have already processed this `transaction_id`.
+2. If yes, return the same response you returned the first time (same balance, same status).
+3. If no, process the transaction and store the `transaction_id` with the result.
+
+```typescript
+app.post("/callbacks/wallet", async (req, res) => {
+  // 1. Verify signature
+  const sig = req.headers["x-signature"] as string;
+  if (!verifySignature(req.rawBody, sig, CALLBACK_SECRET)) {
+    return res.status(401).json({ error: "Invalid signature" });
+  }
+
+  const { transaction_id, type, player_id, amount } = req.body;
+
+  // 2. Check idempotency
+  const existing = await db.getTransaction(transaction_id);
+  if (existing) {
+    return res.json({ balance: existing.balance_after });
+  }
+
+  // 3. Process transaction
+  let newBalance: number;
+  if (type === "bet") {
+    newBalance = await db.deductBalance(player_id, amount);
+    if (newBalance < 0) {
+      return res.status(402).json({ error: "Insufficient funds" });
+    }
+  } else {
+    // win or refund
+    newBalance = await db.creditBalance(player_id, amount);
+  }
+
+  // 4. Store for idempotency
+  await db.saveTransaction(transaction_id, { balance_after: newBalance });
+
+  return res.json({ balance: newBalance });
+});
+```
+
+For full callback documentation, see the [Wallet Callback Guide](wallet-callback-guide.md).
+
+---
+
+## Step 5: Test Your Integration
+
+Use your `sk_test_*` sandbox key to test the full flow end-to-end.
+
+### Testing checklist
+
+- [ ] **Game catalog** -- List games and verify filtering works
+- [ ] **Session creation** -- Create a session and confirm you receive a valid `game_url`
+- [ ] **Demo session** -- Create a demo session and verify free-play mode works
+- [ ] **Bet callback** -- Verify your endpoint deducts the correct amount and returns the updated balance
+- [ ] **Win callback** -- Verify your endpoint credits the correct amount
+- [ ] **Refund callback** -- Verify your endpoint reverses a bet correctly
+- [ ] **Insufficient funds** -- Send a bet larger than the player's balance and confirm you return `402`
+- [ ] **Idempotency** -- Send the same `transaction_id` twice and confirm you return the same response both times
+- [ ] **Signature verification** -- Send a request with a tampered signature and confirm your endpoint rejects it with `401`
+- [ ] **Timeout handling** -- Confirm your callback endpoint responds within 5 seconds under load
+- [ ] **Blocked country** -- Attempt to create a session for a blocked country and confirm you receive `403`
+
+### Viewing transactions
+
+You can inspect all sandbox transactions through the API:
+
+```typescript
+const { transactions } = await aggregator.transactions.list({
+  page: 1,
+  per_page: 100,
+});
+```
+
+Or view them in the operator cabinet under **Transactions**.
+
+---
+
+## Step 6: Go Live
+
+Once your sandbox integration passes all tests, you are ready to switch to production.
+
+### Production checklist
+
+**API and authentication:**
+- [ ] Replace `sk_test_*` with your `sk_live_*` API key in your production environment
+- [ ] Store the production API key and callback secret in a secrets manager (not in code)
+- [ ] Verify your production callback URL is configured in the operator cabinet
+
+**Callback endpoint:**
+- [ ] Endpoint is publicly accessible over HTTPS (TLS 1.2+)
+- [ ] Signature verification is enabled and tested
+- [ ] Idempotency handling is implemented and tested
+- [ ] Endpoint responds within 5 seconds under expected load
+- [ ] Error responses follow the documented status codes (200, 402, 409, 500)
+
+**Reliability:**
+- [ ] Callback endpoint has monitoring and alerting configured
+- [ ] You have a process for investigating and resolving failed callbacks
+- [ ] Your database transactions for balance updates are atomic (no partial updates)
+- [ ] You log every callback with `transaction_id`, `type`, and `amount` for reconciliation
+
+**Compliance:**
+- [ ] You respect `blocked_countries` and do not launch games for restricted jurisdictions
+- [ ] Player balances are displayed in the correct currency and denomination
+- [ ] You have completed KYB verification and your operator account is approved for production
+
+**Final verification:**
+- [ ] Run one real session with a small balance to confirm the full flow works in production
+- [ ] Verify callback delivery by checking the transaction in both your system and the operator cabinet
+
+---
+
+## Further Reading
+
+- [Full API Reference](machine-api-reference.md) -- Complete endpoint documentation with request/response schemas
+- [Wallet Callback Guide](wallet-callback-guide.md) -- Detailed callback specification, retry behavior, and edge cases
+- [@aggregator/sdk README](../../packages/sdk/README.md) -- TypeScript SDK installation and usage

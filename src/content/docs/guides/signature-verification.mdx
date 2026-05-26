@@ -1,0 +1,152 @@
+---
+title: "Signature verification"
+description: "Verify HMAC-signed wallet callbacks in TypeScript, PHP, and Python — production-grade snippets."
+---
+
+import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
+
+Every wallet callback delivered by The Aggregator includes an HMAC-SHA256 signature in the `X-Aggregator-Signature` header. **You must verify the signature before debiting or crediting any player wallet.** Skipping verification is the #1 fraud vector in B2B gaming.
+
+<Aside type="danger" title="Money path">
+Copy these snippets verbatim into your integration. The HMAC verification step protects real money. A bug here means an attacker who learns your operator's IP or a single legit callback shape can mint arbitrary credits.
+</Aside>
+
+## What you receive
+
+```http
+POST /your/callback-url HTTP/1.1
+Host: your-server.example.com
+Content-Type: application/json
+X-Aggregator-Signature: sha256=8b1a9953c4611296a827abf8c47804d7e8c8e8c8e8c8e8c8e8c8e8c8e8c8e8c8
+X-Aggregator-Timestamp: 1716748800
+
+{"event":"bet","session_id":"...","amount":"1.50","currency":"EUR",...}
+```
+
+## What you compute
+
+1. Take the **raw request body bytes** (do not re-serialise the JSON — re-serialisation changes whitespace)
+2. Concatenate: `f"{timestamp}.{raw_body}"`
+3. HMAC-SHA256 with your operator's `callback_secret` (set in the cabinet)
+4. Hex-encode the digest
+5. Constant-time compare with the value after `sha256=` in the header
+
+## Snippets
+
+<Tabs syncKey="lang">
+
+<TabItem label="TypeScript">
+
+```ts
+import crypto from "node:crypto";
+
+const SECRET = process.env.AGGREGATOR_CALLBACK_SECRET!;
+
+export function verifyAggregatorSignature(
+  rawBody: Buffer,
+  signatureHeader: string,
+  timestampHeader: string,
+): boolean {
+  // Reject callbacks older than 15 minutes (replay protection)
+  const ts = parseInt(timestampHeader, 10);
+  if (!Number.isFinite(ts)) return false;
+  const skewSeconds = Math.abs(Date.now() / 1000 - ts);
+  if (skewSeconds > 900) return false;
+
+  const expected = crypto
+    .createHmac("sha256", SECRET)
+    .update(`${ts}.${rawBody.toString("utf8")}`)
+    .digest("hex");
+
+  const provided = signatureHeader.replace(/^sha256=/, "");
+  if (expected.length !== provided.length) return false;
+
+  return crypto.timingSafeEqual(
+    Buffer.from(expected, "hex"),
+    Buffer.from(provided, "hex"),
+  );
+}
+```
+
+</TabItem>
+
+<TabItem label="PHP">
+
+```php
+<?php
+
+function verifyAggregatorSignature(
+    string $rawBody,
+    string $signatureHeader,
+    string $timestampHeader
+): bool {
+    $secret = getenv('AGGREGATOR_CALLBACK_SECRET');
+    if ($secret === false) {
+        throw new RuntimeException('AGGREGATOR_CALLBACK_SECRET is not set');
+    }
+
+    // Reject callbacks older than 15 minutes (replay protection)
+    if (!ctype_digit($timestampHeader)) {
+        return false;
+    }
+    $ts = (int) $timestampHeader;
+    if (abs(time() - $ts) > 900) {
+        return false;
+    }
+
+    $expected = hash_hmac('sha256', $ts . '.' . $rawBody, $secret);
+    $provided = preg_replace('/^sha256=/', '', $signatureHeader);
+
+    return hash_equals($expected, $provided);
+}
+```
+
+</TabItem>
+
+<TabItem label="Python">
+
+```python
+import hmac
+import hashlib
+import os
+import time
+
+
+def verify_aggregator_signature(
+    raw_body: bytes,
+    signature_header: str,
+    timestamp_header: str,
+) -> bool:
+    secret = os.environ["AGGREGATOR_CALLBACK_SECRET"].encode()
+
+    # Reject callbacks older than 15 minutes (replay protection)
+    try:
+        ts = int(timestamp_header)
+    except ValueError:
+        return False
+    if abs(time.time() - ts) > 900:
+        return False
+
+    message = f"{ts}.".encode() + raw_body
+    expected = hmac.new(secret, message, hashlib.sha256).hexdigest()
+    provided = signature_header.removeprefix("sha256=")
+
+    return hmac.compare_digest(expected, provided)
+```
+
+</TabItem>
+
+</Tabs>
+
+## Common mistakes
+
+| Mistake | Symptom | Fix |
+|---|---|---|
+| Re-serialising the JSON before HMAC | Signature always invalid even when key is correct | Use the **raw bytes** of the request body; do not `json.loads()` then `json.dumps()` |
+| String comparison instead of constant-time | Timing-attack vulnerability | Use `crypto.timingSafeEqual` / `hash_equals` / `hmac.compare_digest` |
+| Forgetting the timestamp window | Replay attacks succeed indefinitely | Reject if `\|now - timestamp\| > 900s` |
+| Using `sk_live_*` API key as the secret | Always fails — wrong secret | The `callback_secret` is separate; find it in cabinet → API Keys → Webhook secret |
+
+## Test your implementation
+
+Use the sandbox to verify your signature check rejects tampered payloads before going live. See [Testing in sandbox](/guides/testing-sandbox/).

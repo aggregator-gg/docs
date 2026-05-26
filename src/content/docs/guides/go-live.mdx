@@ -1,0 +1,166 @@
+---
+title: "Operator Go-Live Checklist"
+description: "Complete every item on this checklist before switching from `sk_test_*` to `sk_live_*` keys. Each item represents a real failure mode observed in production integrations. Skipping any item risks player-facing outages, financial discrepancies, or regulatory violations."
+---
+
+## Prerequisites
+
+- [ ] You have a working integration in the [test environment](./environments.md) with all callback flows passing.
+- [ ] You have read the [error code reference](./error-codes.md) and handle all relevant codes.
+
+---
+
+## 1. Wallet Callback Endpoint
+
+**Your callback endpoint must handle all three transaction types correctly.**
+
+- [ ] **Bet**: Debit the player balance by the requested amount. Return the updated balance.
+- [ ] **Win**: Credit the player balance by the win amount. Return the updated balance.
+- [ ] **Refund**: Reverse a previous bet. Credit the player balance by the refund amount. Return the updated balance.
+
+Verify that your endpoint returns the correct JSON response format for each type. The platform validates the response schema and will flag malformed responses.
+
+---
+
+## 2. Signature Verification
+
+**Every callback request includes an HMAC signature. You must verify it.**
+
+- [ ] Your endpoint reads the `X-SIGNATURE` header from each incoming callback.
+- [ ] You compute the HMAC-SHA256 of the raw request body using your `callback_secret`.
+- [ ] You compare the computed signature to the header value using a constant-time comparison function.
+- [ ] Requests with invalid signatures are rejected with a `401` status code.
+
+Failing to verify signatures means an attacker could send forged callbacks to credit player balances. This is a critical security control.
+
+---
+
+## 3. Idempotency
+
+**Duplicate callbacks must return the same response without processing the transaction twice.**
+
+- [ ] You store the `transaction_id` from each processed callback.
+- [ ] If a callback arrives with a `transaction_id` you have already processed, you return the original response without modifying the player balance.
+- [ ] Your idempotency check works across restarts (persisted storage, not in-memory only).
+
+The platform retries failed callbacks. Without idempotency, a retry can double-debit or double-credit a player.
+
+---
+
+## 4. Error Handling and Graceful Degradation
+
+**Your callback endpoint must not crash or return unstructured errors.**
+
+- [ ] If your database is temporarily unavailable, your endpoint returns a `503` status code (not a stack trace or HTML error page).
+- [ ] If an unknown `transaction_type` arrives, your endpoint returns a `400` with a clear error message.
+- [ ] You have a fallback for unexpected fields in the callback payload (forward-compatible parsing, not strict-match).
+- [ ] Your endpoint logs errors with enough context to debug (player ID, transaction ID, amount, timestamp).
+
+The platform interprets `5xx` responses as transient failures and will retry. It interprets `4xx` responses as permanent failures and will not retry.
+
+---
+
+## 5. Round Lifecycle
+
+**You must correctly track game rounds to ensure financial integrity.**
+
+- [ ] You store the `round_id` for every transaction.
+- [ ] When a transaction includes `"finished": true`, you mark the round as complete.
+- [ ] You do not accept new bets for a round that has been marked as finished.
+- [ ] If a win arrives for a round you have not seen (due to a missed bet callback), you handle it gracefully -- log a warning and process the win rather than rejecting it.
+
+---
+
+## 6. Player Balance Accuracy
+
+**Balance calculations must be exact. Floating-point arithmetic is not acceptable for money.**
+
+- [ ] You use integer arithmetic (cents/minor units) or a decimal type for all balance operations.
+- [ ] On **bet**: `new_balance = old_balance - bet_amount` (must not go negative).
+- [ ] On **win**: `new_balance = old_balance + win_amount`.
+- [ ] On **refund**: `new_balance = old_balance + refund_amount`.
+- [ ] The balance returned in your callback response matches the actual player balance after the operation.
+
+---
+
+## 7. Callback Response Time
+
+**Your callback endpoint must respond within 5 seconds.**
+
+- [ ] Under normal load, your endpoint responds in under 2 seconds (p95).
+- [ ] Under peak load, your endpoint responds in under 5 seconds (p99).
+- [ ] You have load tested your callback endpoint to verify these targets.
+
+If your endpoint does not respond within 5 seconds, the platform times out the request and may display an error to the player. Slow callbacks degrade the player experience.
+
+---
+
+## 8. HTTPS with Valid Certificate
+
+**Your callback URL must use HTTPS with a valid, non-expired TLS certificate.**
+
+- [ ] Your `callback_url` starts with `https://`.
+- [ ] The TLS certificate is issued by a trusted Certificate Authority (not self-signed).
+- [ ] The certificate is not expired and will not expire within the next 30 days.
+- [ ] The certificate covers the exact domain in your `callback_url` (no hostname mismatch).
+
+The platform rejects callback URLs that fail SSRF validation or use HTTP. See [E6002 `callback_url_invalid`](./error-codes.md#operator-config-errors-e6xxx).
+
+---
+
+## 9. Monitoring and Alerting
+
+**You must have monitoring in place before going live.**
+
+- [ ] You have alerts for callback endpoint downtime (health check or synthetic monitoring).
+- [ ] You have alerts for elevated error rates on your callback endpoint (5xx rate > 1%).
+- [ ] You have alerts for unusual transaction patterns (e.g., spike in refunds, unusually large bets).
+- [ ] You have a runbook or on-call rotation for responding to callback failures outside business hours.
+
+Without monitoring, you will not know when your integration is failing until players complain.
+
+---
+
+## 10. Self-Exclusion Compliance
+
+**You must respect self-exclusion signals from the platform.**
+
+- [ ] When you receive [E3004 `player_self_excluded`](./error-codes.md#session-errors-e3xxx), you do not allow the player to start a new game session.
+- [ ] You do not display games or a "Play" button to self-excluded players.
+- [ ] Your system logs self-exclusion events for audit purposes.
+
+Self-exclusion is a regulatory requirement in most jurisdictions. Failure to enforce it can result in license revocation and fines.
+
+---
+
+## Verification Process
+
+After completing all items above:
+
+1. Run your full integration test suite against the test environment.
+2. Review the checklist with your engineering and compliance teams.
+3. Open **Settings > API Keys** in the operator cabinet and run **Get readiness**.
+4. Use **Promote to live** to create a `sk_live_*` key once the checklist passes.
+5. Deploy with the live key and monitor your first 100 transactions closely.
+
+---
+
+## Common Go-Live Failures
+
+These are the most frequent reasons integrations fail in the first 24 hours of production:
+
+| Failure                       | Root Cause                                               | Prevention                        |
+|-------------------------------|----------------------------------------------------------|-----------------------------------|
+| Double-credited wins          | Missing idempotency check on retried callbacks.          | Checklist item 3.                 |
+| Balance drift                 | Floating-point arithmetic on money values.               | Checklist item 6.                 |
+| Callback timeouts             | Database queries in the callback hot path without indexes.| Checklist item 7. Load test first.|
+| Forged callbacks accepted     | Signature verification not implemented.                  | Checklist item 2.                 |
+| Stuck rounds                  | `finished` flag not tracked, rounds never close.         | Checklist item 5.                 |
+| Certificate expiry            | TLS cert expired the week after go-live.                 | Checklist item 8. Set a reminder. |
+
+---
+
+## Related Documentation
+
+- [Error Code Reference](./error-codes.md) -- All error codes, HTTP status mappings, and handling guidance.
+- [Test vs Live Environments](./environments.md) -- Environment differences, rate limits, and how to switch.

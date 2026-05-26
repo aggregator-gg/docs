@@ -1,0 +1,134 @@
+---
+title: "Test vs Live Environments"
+description: "The Aggregator provides two isolated environments so you can integrate and test without touching real money or real provider systems. Both environments share the same API surface and game catalog -- the only difference is your API key prefix."
+---
+
+## How Environments Work
+
+Your API key prefix determines which environment processes your request:
+
+| Prefix      | Environment | Real Money | Provider Calls | Rate Limit     |
+|-------------|-------------|------------|----------------|----------------|
+| `sk_test_*` | Test        | No         | Simulated (some providers) | 60 req/min  |
+| `sk_live_*` | Live        | Yes        | Real           | 600 req/min    |
+
+There is no separate base URL. Both environments use the same API endpoint. The platform routes your request based on the key prefix.
+
+## Test Environment
+
+The test environment is designed for integration development and QA. It behaves like production with a few deliberate constraints.
+
+### What is the Same
+
+- **API surface**: Every endpoint available in live is available in test. Request and response schemas are identical.
+- **Game catalog**: You see the same games in test as you would in live. Game IDs, metadata, and configurations match.
+- **Error codes**: The same [error codes](./error-codes.md) apply in both environments.
+- **Callback flow**: The platform sends wallet callbacks to your `callback_url` in both environments. Your callback endpoint must be reachable.
+
+### What is Different
+
+| Behavior                  | Test                                       | Live                     |
+|---------------------------|--------------------------------------------|--------------------------|
+| Money                     | No real money. Balances are simulated.     | Real money transactions. |
+| Billing                   | No charges applied.                        | Standard billing applies.|
+| Concurrent sessions       | Max 5 at a time.                           | No fixed limit.          |
+| Rate limit                | 60 requests per minute per key.            | 600 requests per minute per key. |
+| Provider API calls        | Some providers use test/sandbox credentials. No real provider charges. | Real provider API calls. |
+| Response headers          | Includes `X-API-Mode: test`.               | Includes `X-API-Mode: live`. |
+| Warning field             | Responses may include a `warning` field with test-mode notices. | No warning field.        |
+
+### Test Response Headers
+
+Every response in the test environment includes an extra header:
+
+```
+X-API-Mode: test
+```
+
+Some responses also include a `warning` field in the JSON body:
+
+```json
+{
+  "data": { ... },
+  "warning": "Test mode: no real money is being transferred."
+}
+```
+
+Use the `X-API-Mode` header to confirm you are hitting the correct environment. If you see `test` in production, you are using the wrong key.
+
+---
+
+## Getting Test Credentials
+
+1. **Register** in the operator cabinet at your platform URL.
+2. **Your first API key is always `sk_test_*`.** It is generated automatically when your operator account is created.
+3. Navigate to **Settings > API Keys** in the cabinet to view your test key.
+4. Use this key in the `Authorization` header for all test requests:
+
+```
+Authorization: Bearer sk_test_abc123...
+```
+
+You can create additional test keys with different scopes from the same settings page.
+
+---
+
+## Live Environment
+
+Live keys are issued after you complete the [go-live checklist](./go-live-checklist.md). Live keys process real money and make real calls to game providers.
+
+### Getting Live Credentials
+
+1. Complete all items on the [go-live checklist](./go-live-checklist.md).
+2. Open **Settings > API Keys** in the operator cabinet.
+3. Use **Get readiness** to review what is still missing, then **Promote to live** to create a `sk_live_*` key.
+
+Live keys are self-serve after the readiness checks pass. No account-manager approval flow is required in the current app.
+
+---
+
+## Key Differences at a Glance
+
+```
+sk_test_abc123...  -->  Test environment
+                        - No real money
+                        - Max 5 sessions
+                        - 60 req/min
+                        - X-API-Mode: test
+
+sk_live_xyz789...  -->  Live environment
+                        - Real money
+                        - No session cap
+                        - 600 req/min
+                        - X-API-Mode: live
+```
+
+---
+
+## Switching from Test to Live
+
+When you are ready to go live:
+
+1. **Complete the [go-live checklist](./go-live-checklist.md).** Every item must pass.
+2. **Obtain a `sk_live_*` key** (see above).
+3. **Replace your API key** in your integration configuration. No other code changes are needed -- the API surface is identical.
+4. **Verify the `X-API-Mode` header** in your first live response to confirm you are in the correct environment.
+5. **Monitor your first transactions** closely. Set up alerts for callback failures and unexpected error rates.
+
+Do not mix test and live keys in the same environment. Use environment variables or a configuration file to manage which key is active.
+
+---
+
+## FAQ
+
+**Can I use test keys in production?**
+Technically yes, but test keys do not process real money. Your players would not be able to place real bets. Use test keys only for development and QA.
+
+**Do test and live environments share data?**
+No. Sessions, transactions, and player state are completely isolated between environments. A session created with a test key is not visible to a live key.
+
+**What happens if I exceed the test rate limit?**
+You receive an [E9001 `rate_limited`](./error-codes.md#rate-limiting-e9xxx) error with a `429` status code. Check the `X-RateLimit-Reset` header for when you can resume.
+
+**Can I reset my test environment?**
+Test sessions expire after 24 hours automatically. There is no manual reset mechanism. If you need to clear state for testing, create new sessions.

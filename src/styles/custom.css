@@ -1,0 +1,31 @@
+/* The Aggregator brand palette — mirrors CabinetUI in the operator app. */
+:root {
+	--sl-color-accent-low: #003918;
+	--sl-color-accent: #00aa44;
+	--sl-color-accent-high: #80ffaf;
+
+	--sl-color-white: #ffffff;
+	--sl-color-gray-1: #e7ecee;
+	--sl-color-gray-2: #c0c7cc;
+	--sl-color-gray-3: #888f96;
+	--sl-color-gray-4: #545b62;
+	--sl-color-gray-5: #353b41;
+	--sl-color-gray-6: #24292d;
+	--sl-color-black: #1a2332;
+}
+
+:root[data-theme='light'] {
+	--sl-color-accent-low: #c8f5d8;
+	--sl-color-accent: #00993d;
+	--sl-color-accent-high: #004f1e;
+
+	--sl-color-white: #1a2332;
+	--sl-color-gray-1: #24292d;
+	--sl-color-gray-2: #353b41;
+	--sl-color-gray-3: #545b62;
+	--sl-color-gray-4: #888f96;
+	--sl-color-gray-5: #c0c7cc;
+	--sl-color-gray-6: #e7ecee;
+	--sl-color-gray-7: #f3f4f6;
+	--sl-color-black: #ffffff;
+}

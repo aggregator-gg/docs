@@ -1,0 +1,86 @@
+---
+title: "Idempotency"
+description: "Use Idempotency-Key headers to safely retry financial requests."
+---
+
+Network failures between your backend and The Aggregator are inevitable. Without idempotency, a retry after a timeout can charge the same player twice or open the same session twice. The `Idempotency-Key` header solves this.
+
+## How it works
+
+Add a unique `Idempotency-Key` header to every `POST` request that touches financial state:
+
+```http
+POST /v1/sessions HTTP/1.1
+Authorization: Bearer sk_live_...
+Idempotency-Key: 8c8e8c8e-8c8e-4c8e-8c8e-8c8e8c8e8c8e
+Content-Type: application/json
+
+{"game_id": "...", "player_id": "...", "balance": 10000, "currency": "EUR"}
+```
+
+- **First request:** processed normally, response cached
+- **Retried request with the same key (within 24 hours):** the cached response is returned, no duplicate work
+- **Different request body with the same key:** rejected with `409 Conflict` to prevent ambiguous reuse
+
+## Required on
+
+- `POST /v1/sessions`
+- `POST /v1/demo-sessions`
+- Any other `POST` documented as accepting idempotency keys
+
+Idempotency on `GET` is intrinsic (queries don't mutate); the header has no effect there.
+
+## Key format
+
+- Recommended: UUID v4
+- Maximum length: 128 ASCII characters
+- Allowed characters: letters, digits, dashes, underscores
+- **Never reuse keys across logically different operations.** One key = one logical request.
+
+## Common patterns
+
+### Per-spin
+
+```ts
+const idempotencyKey = `bet-${playerId}-${spinId}`;
+```
+
+Stable across retries of the same spin, unique across different spins.
+
+### Per-attempt UUID
+
+```ts
+const idempotencyKey = crypto.randomUUID();
+// Store this in your own state so retries reuse it
+```
+
+Generated once when you start the operation, persisted in your DB, reused on every retry until the operation succeeds.
+
+### Anti-pattern: timestamps
+
+```ts
+// ❌ DO NOT do this
+const idempotencyKey = `bet-${Date.now()}`;
+```
+
+Two retries 100ms apart get different keys. You lose the protection.
+
+## Response
+
+The Aggregator includes `Idempotent-Replay: true` in response headers when serving a cached response, so you can distinguish "this was idempotent" from "this was fresh":
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+Idempotent-Replay: true
+
+{"session_id":"...","game_url":"..."}
+```
+
+## TTL
+
+Idempotency cache lives **24 hours** from the first request. Beyond that, the key expires and a retry with the same key is treated as fresh.
+
+## When to skip
+
+If your operation is **naturally idempotent** at the database level (e.g. an UPSERT keyed on session_id you generate), you can skip the header. But for any operation that mutates a counter, balance, or ledger, use it. The cost is one UUID per request.
