@@ -1,0 +1,55 @@
+---
+title: "Authentication"
+description: "API keys, environment separation, scopes, rate limits."
+---
+
+Every request to the Machine API must include a Bearer token in the `Authorization` header:
+
+```http
+Authorization: Bearer sk_live_a1b2c3d4e5f6...
+```
+
+You obtain API keys from the operator dashboard at [app.aggregator.gg/api-keys](https://app.aggregator.gg/api-keys).
+
+## Key prefixes and environments
+
+| Prefix      | Environment | Purpose                                       |
+| ----------- | ----------- | --------------------------------------------- |
+| `sk_live_`  | Production  | Real-money sessions, production game catalog  |
+| `sk_test_`  | Test        | Sandbox sessions, test catalog, no real money |
+
+Production and test environments share the same API surface and base URL. The key prefix determines which logical environment the request executes in.
+
+See [Environments](/get-started/environments/) for the full isolation model.
+
+## Key rotation
+
+Keys can be rotated with a 24-hour overlap window so you can deploy the new key before retiring the old one:
+
+1. In the cabinet, click **Rotate** on the active key
+2. A new `sk_live_*` key is generated; the old key is marked `deprecated_at: <now>`
+3. Both keys are accepted for the next 24 hours
+4. After 24h the old key is automatically revoked
+
+We recommend rotating production keys every 90 days.
+
+## Rate limits
+
+Default rate limits per key:
+
+- **100 requests/second** sustained
+- **500 requests/second** burst (5-second window)
+- **10 failed authentication attempts/minute per IP** (brute-force protection)
+
+Exceeded limits return `429 Too Many Requests` with a `Retry-After` header.
+
+## Scopes (coming soon)
+
+API key scopes (`read`, `write`, `admin`) are in roadmap. Today all `sk_live_*` keys have full read+write on the issuing operator's resources.
+
+## Security best practices
+
+- **Never commit keys to git.** Use environment variables or a secret manager (1Password, Vault, AWS Secrets Manager).
+- **Never expose `sk_live_*` keys in browser-side code.** This API is server-to-server only.
+- **Rotate on suspected compromise.** Revoke the old key immediately if you believe it leaked.
+- **Use `sk_test_*` for CI.** Real-money keys should never appear in test runs.

@@ -1,0 +1,22 @@
+---
+title: "Changelog"
+description: "Track new endpoints, fields, and deprecation events on the Machine API."
+---
+
+This page records every shipping change to the Machine API. Subscribe by watching [github.com/aggregator-gg/docs](https://github.com/aggregator-gg/docs).
+
+For the human story behind a release, see the corresponding ADR in [the Core repo](https://github.com/aggregator-gg/aggregator/tree/main/docs/architecture).
+
+---
+
+## 2026-05-26 — initial public documentation
+
+- 🆕 **Documentation:** `docs.aggregator.gg` launched. OpenAPI 3.1 source of truth at [`/aggregator-gg/aggregator/blob/main/docs/api/openapi.yaml`](https://github.com/aggregator-gg/aggregator/blob/main/docs/api/openapi.yaml).
+- 🆕 **Versioning policy:** Hybrid path + `Aggregator-Version` header model (see [Versioning](/resources/versioning/)). 180-day minimum deprecation window.
+- 🆕 **`Idempotency-Key` header** documented as required on `POST /v1/sessions` and other financial endpoints.
+
+---
+
+## Earlier — pre-changelog
+
+Releases before this changelog launched are not retrospectively listed. The OpenAPI spec at the time was hand-maintained as `machine-api-reference.md` in the Core repo; that file's `git log` carries the equivalent history.

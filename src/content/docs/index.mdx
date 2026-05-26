@@ -1,0 +1,50 @@
+---
+title: The Aggregator API
+description: B2B game aggregation platform — integrate hundreds of casino games through one API.
+template: splash
+hero:
+  tagline: One API, every game provider. Server-to-server integration in under 4 hours.
+  actions:
+    - text: Quickstart
+      link: /get-started/quickstart/
+      icon: right-arrow
+      variant: primary
+    - text: API Reference
+      link: /api/v1/operations/listgames/
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## Build with The Aggregator
+
+<CardGrid stagger>
+	<Card title="One API, many providers" icon="puzzle">
+		Connect to TRUE LABS, BGaming, Zillion, Megafair, eBaka and more
+		through a single REST surface. No per-provider adapters in your
+		stack.
+	</Card>
+	<Card title="Money-path hardened" icon="approve-check">
+		HMAC + IP allowlist + replay window on every wallet callback.
+		Idempotency-Key headers on financial endpoints. Immutable audit
+		ledger.
+	</Card>
+	<Card title="Test before you ship" icon="setting">
+		`sk_test_*` keys for sandbox sessions. Demo-sessions endpoint
+		runs against staging providers without real-money risk.
+	</Card>
+	<Card title="Open contracts" icon="open-book">
+		OpenAPI 3.1 spec is the source of truth. Generate clients in
+		any language. Postman collection ships with every release.
+	</Card>
+</CardGrid>
+
+## Get started
+
+<CardGrid>
+	<LinkCard title="Quickstart" href="/get-started/quickstart/" description="From `npm install` to your first game launch in 15 minutes." />
+	<LinkCard title="Authentication" href="/get-started/authentication/" description="API keys, environment separation, scopes." />
+	<LinkCard title="How a game round works" href="/get-started/how-a-round-works/" description="The full session → bet → win → settle lifecycle." />
+	<LinkCard title="Wallet callbacks" href="/guides/wallet-callbacks/" description="Receive HMAC-signed bet and win events from providers." />
+</CardGrid>

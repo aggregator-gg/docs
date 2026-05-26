@@ -1,0 +1,77 @@
+---
+title: "Versioning policy"
+description: "How The Aggregator versions the Machine API and handles deprecations."
+---
+
+The Aggregator uses a **hybrid versioning model** combining URL-path versioning for breaking changes and an HTTP header for additive minor revisions. This mirrors the model used by Stripe and Anthropic.
+
+## Major version — URL path
+
+Breaking changes ship under a new path version:
+
+```
+https://api.aggregator.gg/v1/...     ← current
+https://api.aggregator.gg/v2/...     ← next breaking version (not yet released)
+```
+
+Major versions live **in parallel** during the deprecation window — your existing `/v1/` integration keeps working while `/v2/` is available for early adopters.
+
+## Minor revisions — Aggregator-Version header
+
+Additive, non-breaking changes (new optional fields, new endpoints, new error codes) ship behind a date-stamped header:
+
+```http
+Aggregator-Version: 2026-05-26
+```
+
+- **If you omit the header:** you get the latest stable minor revision for your major version
+- **If you pin the header:** you get exactly the schema that existed on that date
+
+We recommend **pinning the header in production** so new minor revisions cannot affect your behaviour without an explicit upgrade.
+
+## What counts as breaking
+
+| Change | Major or minor? |
+|---|---|
+| Add a new endpoint | Minor (additive) |
+| Add a new optional request field | Minor |
+| Add a new field to a response | Minor (consumers must ignore unknown fields) |
+| Add a new error code | Minor |
+| Rename an existing field | **Major** |
+| Remove an existing field | **Major** |
+| Change the type of an existing field | **Major** |
+| Tighten validation (previously accepted values rejected) | **Major** |
+| Change the meaning of an existing field | **Major** |
+
+## Deprecation lifecycle
+
+When we deprecate an endpoint or field, you'll see two HTTP response headers:
+
+```http
+Deprecation: true
+Sunset: Wed, 26 Nov 2026 00:00:00 GMT
+```
+
+- `Deprecation: true` — [RFC 9745](https://datatracker.ietf.org/doc/rfc9745/). The endpoint still works but should be migrated.
+- `Sunset: <RFC 8594 date>` — [RFC 8594](https://datatracker.ietf.org/doc/rfc8594/). On this date, the endpoint will be removed.
+
+**Minimum deprecation window: 180 days** from announcement to sunset. No exceptions for breaking removal.
+
+Deprecated endpoints are also flagged with `x-deprecated: true` in the [OpenAPI spec](/api/v1/) and surfaced with a yellow banner in this documentation.
+
+## How we announce changes
+
+- **Changelog** — every shipping change is documented at [/resources/changelog/](/resources/changelog/) with a date, scope, and migration notes
+- **Email to API key contacts** — owners of every active API key receive the announcement at least 14 days before a minor revision and at least 90 days before a deprecation
+- **Dashboard banner** — appears in the cabinet for affected operators
+
+## Migration support
+
+When we ship a `v2/`, expect:
+
+- A migration guide in this documentation
+- A side-by-side comparison table for every changed endpoint
+- A migration helper script in the [TypeScript SDK](https://github.com/aggregator-gg/sdk)
+- Direct technical-account-manager support if you're paying for it
+
+We will never sunset a major version with less than 180 days notice. Most migrations have been ≥ 6 months in practice.

@@ -1,0 +1,17 @@
+---
+title: "Testing in sandbox"
+description: "Sandbox keys, demo sessions, and tooling for testing your integration without real-money risk."
+---
+
+This page is being written. In the meantime:
+
+- Use `sk_test_*` keys for sandbox sessions — see [Authentication](/get-started/authentication/)
+- Use `POST /v1/demo-sessions` for demo game launches that don't touch real money
+- Open `https://api.the-aggregator.io` (staging host) to run against the staging cluster
+- See [Environments](/get-started/environments/) for the full environment-isolation model
+
+Coming soon to this page:
+
+- Postman collection download
+- Echo-callback service for end-to-end test before you have your own callback endpoint stood up
+- Recommended test scenarios (timeout, signature mismatch, double-debit attempt, replay)

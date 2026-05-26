@@ -1,0 +1,39 @@
+---
+title: Introduction
+description: What The Aggregator is and how it fits into your stack.
+---
+
+The Aggregator is a B2B game aggregation platform. We connect **game providers** (casino content studios — TRUE LABS, BGaming, Zillion, Megafair, eBaka, and more) with **operators** (casinos that run player-facing front-ends) through one normalised REST API.
+
+## Who this is for
+
+This documentation covers the **Machine API** — the server-to-server interface operators use to:
+
+- Browse and filter the unified game catalog
+- Launch real-money and demo game sessions
+- Receive HMAC-signed wallet callbacks for bets and wins
+- Query transaction history for reconciliation
+
+If you are looking for the cabinet UI, the analytics dashboard, or the affiliate portal, sign in at [app.aggregator.gg](https://app.aggregator.gg).
+
+## What the platform handles for you
+
+- **Provider integration normalisation** — each provider's launch protocol, callback shape, and signature scheme is translated into one canonical contract.
+- **Game catalog deduplication** — same game across multiple providers surfaces once.
+- **Session state** — open, paused, expired, settled.
+- **Callback routing + replay protection** — HMAC verification, IP allowlists per provider, 15-minute timestamp window.
+- **Financial ledger** — immutable, append-only, reconciliation tooling included.
+- **Compliance gates** — self-exclusion, GeoIP jurisdiction blocking, license checks (fail-closed by default).
+
+## What you remain responsible for
+
+- **Player wallet** — you hold balances. We tell you when to debit (`bet`) and credit (`win`).
+- **Player KYC** — verifying real-money players is on you.
+- **Responsible gaming surfaces** — deposit limits, reality checks, session caps are operator-configurable; surfacing them to players is your UX.
+- **Licensing** — your operating licenses for your jurisdiction.
+
+## Read next
+
+- [Quickstart](/get-started/quickstart/) — your first game launch in 15 minutes.
+- [How a game round works](/get-started/how-a-round-works/) — the full lifecycle.
+- [Authentication](/get-started/authentication/) — API keys and environments.
