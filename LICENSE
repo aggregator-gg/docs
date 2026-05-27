@@ -1,0 +1,35 @@
+Apache License
+Version 2.0, January 2004
+http://www.apache.org/licenses/
+
+Copyright 2026 The Aggregator (aggregator.gg)
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+---
+
+The full Apache 2.0 license text is available at:
+https://www.apache.org/licenses/LICENSE-2.0.txt
+
+This license applies to:
+  - All Markdown / MDX documentation files under src/content/docs/
+  - All code samples shown inside those documentation files
+  - The OpenAPI specification at openapi/aggregator.yaml
+  - Build scripts under scripts/
+
+You may freely copy, modify, and distribute these for any purpose,
+commercial or non-commercial, provided you retain attribution to
+The Aggregator and include this license notice in any derivative work.
+
+The trademarks "The Aggregator", "aggregator.gg", and the wordmark logo
+are NOT covered by this license and remain the property of the operator.

@@ -1,6 +1,7 @@
 {
   "name": "aggregator-docs",
   "description": "Public API documentation for The Aggregator (docs.aggregator.gg)",
+  "license": "Apache-2.0",
   "type": "module",
   "version": "0.1.0",
   "private": true,
