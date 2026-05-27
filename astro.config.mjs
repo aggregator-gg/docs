@@ -20,7 +20,7 @@ export default defineConfig({
 				replacesTitle: false,
 			},
 			social: [
-				{ icon: 'github', label: 'GitHub', href: 'https://github.com/aggregator-gg' },
+				{ icon: 'github', label: 'GitHub', href: 'https://github.com/aggregator-gg/docs' },
 			],
 			// Edit-this-page intentionally disabled. The repo is public for
 			// SEO + indexability, but the docs site is editorial — changes
