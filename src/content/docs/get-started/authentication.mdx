@@ -30,11 +30,19 @@ We recommend rotating production keys every 90 days.
 
 Default rate limits, evaluated in a 60-second sliding window:
 
-- **600 requests/minute per API key**
-- **3 000 requests/minute per operator account** (sum across all keys)
-- **100 failed authentication attempts/minute per IP** (brute-force protection)
+| Scope | Limit |
+|---|---|
+| All requests (per key) | **600 / minute** |
+| All requests (per operator, sum across keys) | **3 000 / minute** |
+| State-changing requests — POST / PUT / PATCH / DELETE — per key | **200 / minute** |
+| State-changing requests — per operator | **1 000 / minute** |
+| Failed authentication attempts per IP | **100 / minute** (brute-force protection) |
 
-Exceeded limits return `429 Too Many Requests` with `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers. The `X-RateLimit-Reset` value is a Unix timestamp — wait until then, or use the `Retry-After` header on the response.
+State-changing requests count against both buckets (the all-requests one and the write-only one) so a flood of cheap `GET /v1/games` cannot exhaust the budget that legitimate `POST /v1/sessions` traffic needs.
+
+Exceeded limits return `429 Too Many Requests` with `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers. The `X-RateLimit-Reset` value is a Unix timestamp — wait until then, or use the `Retry-After` header on the response. The error body's `scope` field tells you which bucket tripped (`key`, `user`, `key_write`, `user_write`) so you can adjust your request mix accordingly.
+
+If your sustained `POST /v1/sessions` rate genuinely needs more than 200/minute, contact your account contact and we will raise the write bucket for your account.
 
 ## Scopes
 

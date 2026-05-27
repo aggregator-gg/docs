@@ -45,13 +45,17 @@ Use demo sessions for marketing previews, lobby thumbnails, or showing a game in
 
 ## Rate limits
 
-Default rate limits, evaluated in a 60-second sliding window:
+Default rate limits, evaluated in a 60-second sliding window. State-changing requests (POST/PUT/PATCH/DELETE) count against both the all-requests and the write-only bucket.
 
-- **600 requests/minute per API key**
-- **3 000 requests/minute per operator account** (sum across all keys)
-- **100 failed authentication attempts/minute per IP** (brute-force protection)
+| Scope | Limit |
+|---|---|
+| All requests (per key) | 600 / minute |
+| All requests (per operator) | 3 000 / minute |
+| State-changing requests (per key) | 200 / minute |
+| State-changing requests (per operator) | 1 000 / minute |
+| Failed auth attempts (per IP) | 100 / minute |
 
-Exceeded limits return `429 Too Many Requests` with `X-RateLimit-*` headers and `Retry-After`. See [Authentication](/get-started/authentication/) for full header semantics.
+Exceeded limits return `429 Too Many Requests` with `X-RateLimit-*` headers and `Retry-After`. See [Authentication](/get-started/authentication/) for full semantics.
 
 ## Read next
 
