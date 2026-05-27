@@ -1,0 +1,17 @@
+# Default ownership: any maintainer.
+*                                  @iggregator
+
+# Money-path-adjacent surfaces — require extra scrutiny in review.
+/openapi/                          @iggregator
+/src/content/docs/guides/signature-verification.mdx     @iggregator
+/src/content/docs/guides/wallet-callbacks.mdx           @iggregator
+/src/content/docs/guides/code-samples.mdx               @iggregator
+/src/content/docs/guides/idempotency.mdx                @iggregator
+
+# Build pipeline — anything that runs during `npm run build` and writes
+# into public/ has supply-chain implications.
+/scripts/                          @iggregator
+/.github/                          @iggregator
+/wrangler.jsonc                    @iggregator
+/package.json                      @iggregator
+/package-lock.json                 @iggregator

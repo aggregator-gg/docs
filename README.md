@@ -70,8 +70,6 @@ The interactive API reference under `/api/v1/...` is auto-generated from `openap
 
 Cloudflare Pages auto-builds on push to `main`. Preview deploys per branch at `<branch>.aggregator-docs.pages.dev`.
 
-Architecture decisions: see [ADR-032 in aggregator-gg/aggregator](https://github.com/aggregator-gg/aggregator/blob/main/docs/architecture/ADR-032-PUBLIC-API-DOCS.md) (private repo — read-only for the platform team).
-
 ## Contributing
 
 This is the public source for `docs.aggregator.gg`. The repo is public for SEO + indexability + linkability; content changes ship through internal PRs, not community drive-by edits. If you spot an error in the docs, open an issue.

@@ -1,0 +1,33 @@
+# gitleaks configuration for aggregator-gg/docs.
+#
+# This repo intentionally publishes example API keys (placeholder sk_live_xxx,
+# sk_live_a1b2c3d4e5f6, etc.) in code samples, OpenAPI examples, and the
+# generated Postman collection / llms-full.txt. Without allowlisting, gitleaks
+# flags every one of those as a leaked secret.
+#
+# The allowlist is precise: only literal placeholder values pass. Anything
+# that *looks* like a real key (longer entropy, real-looking suffix) still
+# trips.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Placeholder API key examples in docs"
+
+regexes = [
+  # Placeholder forms used across the docs site
+  '''sk_live_xxx''',
+  '''sk_live_REPLACE_ME''',
+  '''sk_live_a1b2c3d4e5f6\.\.\.''',
+  '''sk_live_a1b2c3d4e5f6''',
+  '''sk_live_ab12…wxyz''',
+]
+
+paths = [
+  # Auto-generated artefacts that propagate the openapi.yaml examples
+  '''public/downloads/aggregator\.postman_collection\.json''',
+  '''public/llms-full\.txt''',
+  # The Astro build output (rebuilt on every CI run)
+  '''dist/.*''',
+]

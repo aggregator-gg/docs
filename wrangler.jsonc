@@ -7,8 +7,6 @@
 	// starlight-openapi pulls node:fs / node:url that aren't available in
 	// the Workers runtime. Declaring `assets.directory` explicitly tells
 	// wrangler "this is static assets, do not touch the framework config".
-	//
-	// See ADR-032 in aggregator-gg/aggregator for the architecture rationale.
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "aggregator-docs",
 	"compatibility_date": "2026-05-26",

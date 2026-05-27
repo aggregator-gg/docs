@@ -36,9 +36,9 @@ Default rate limits, evaluated in a 60-second sliding window:
 
 Exceeded limits return `429 Too Many Requests` with `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers. The `X-RateLimit-Reset` value is a Unix timestamp — wait until then, or use the `Retry-After` header on the response.
 
-## Scopes (coming soon)
+## Scopes
 
-API key scopes (`read`, `write`, `admin`) are in roadmap. Today all `sk_live_*` keys have full read+write on the issuing operator's resources.
+Each key grants access to its issuing operator's resources within the operator's configured permissions. Finer-grained scopes (`read`, `write`, `admin`) and per-key IP allowlists are on the roadmap — your account contact can let you know when they ship.
 
 ## Security best practices
 

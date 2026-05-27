@@ -103,9 +103,9 @@ Default rate limits, evaluated in a 60-second sliding window:
 
 Exceeded limits return `429 Too Many Requests` with `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers. The `X-RateLimit-Reset` value is a Unix timestamp — wait until then, or use the `Retry-After` header on the response.
 
-## Scopes (coming soon)
+## Scopes
 
-API key scopes (`read`, `write`, `admin`) are in roadmap. Today all `sk_live_*` keys have full read+write on the issuing operator's resources.
+Each key grants access to its issuing operator's resources within the operator's configured permissions. Finer-grained scopes (`read`, `write`, `admin`) and per-key IP allowlists are on the roadmap — your account contact can let you know when they ship.
 
 ## Security best practices
 
@@ -1390,52 +1390,27 @@ This protects against network-level retries and edge cases where The Aggregator'
 
 ---
 
-## Retry Behavior
+## Retry behaviour
 
-If your endpoint returns an HTTP 5xx status or is unreachable (connection error, timeout), The Aggregator enqueues the callback for retry.
+If your endpoint returns an HTTP 5xx status or is unreachable (connection error, timeout), The Aggregator enqueues the callback for retry with exponential backoff.
 
-### Retry Schedule
+- Multiple retry attempts are made over roughly an hour total.
+- A 4xx response is treated as a permanent failure and **is not retried** — fix the cause and have your support contact replay the callback if needed.
+- Callbacks that exhaust the retry budget are parked and can be replayed manually by your support contact.
 
-| Attempt | Delay |
-|---------|-------|
-| 1 | 5 seconds |
-| 2 | 30 seconds |
-| 3 | 2 minutes |
-| 4 | 10 minutes |
-| 5 | 1 hour |
+**Implication for your handler:** make it idempotent. The same `transaction_id` may arrive more than once and you must return the same result on every invocation without double-debiting or double-crediting. See [Idempotency](/guides/idempotency/).
 
-After 5 failed attempts, the callback moves to a **dead-letter queue** and is no longer retried. Contact support to replay dead-lettered callbacks.
+### Response time
 
-### Timeouts
-
-- **Forward timeout**: 5 seconds. Your server must respond within 5 seconds on the initial callback.
-- **Retry timeout**: 10 seconds per retry attempt.
-
-If your processing takes longer than 5 seconds, return HTTP 200 immediately with the current balance and process asynchronously. Alternatively, optimize your handler to respond within the timeout.
+Aim for **under 2 seconds at p95** and well under 5 seconds at the worst case. If your processing genuinely takes longer, return `200` immediately with the current balance and complete the work asynchronously.
 
 ---
 
-## Circuit Breaker
+## Backpressure
 
-The Aggregator uses a per-operator circuit breaker to protect both your infrastructure and the platform from cascading failures.
+The Aggregator applies per-operator backpressure when your endpoint is repeatedly failing — sustained 5xx or timeouts cause The Aggregator to pause forward attempts for a short cool-off, then resume with a probe. No transactions are lost; they are queued and delivered once your endpoint recovers.
 
-### States
-
-| State | Behavior |
-|-------|----------|
-| **Closed** | Normal operation. Failures are counted. |
-| **Open** | All callbacks are rejected immediately and queued for retry. No requests reach your server. |
-| **Half-Open** | A single probe request is allowed through. If it succeeds, the circuit closes. If it fails, the circuit reopens. |
-
-### Thresholds
-
-| Parameter | Default | Env Override |
-|-----------|---------|--------------|
-| Failure threshold | 5 consecutive 5xx responses | `CB_FAILURE_THRESHOLD` |
-| Recovery timeout | 30 seconds | `CB_RECOVERY_TIMEOUT_S` |
-| Max concurrent forwards | 10 per operator | `CB_BULKHEAD_MAX_CONCURRENT` |
-
-When the circuit is open, callbacks accumulate in the retry queue and are delivered once the circuit recovers. You do not lose transactions.
+The practical implication is: a degraded operator endpoint does not back up the platform's queue for other operators, and you do not need to "drain" anything manually after a recovery — delivery resumes automatically.
 
 ---
 
@@ -1631,13 +1606,13 @@ Compare the output with the `X-SIGNATURE` header value.
 
 This is expected behavior during retries. Implement idempotency using `transaction_id` as described in the Idempotency section. Return the same response you returned the first time -- do not process the transaction again.
 
-### Circuit Breaker Tripped
+### Delivery paused after sustained failures
 
 **Symptom**: Callbacks stop arriving for a period, then resume with a burst of retries.
 
-Your endpoint returned 5 or more consecutive 5xx errors, which tripped the circuit breaker. After a 30-second cooldown, The Aggregator sends a single probe request. If it succeeds, the circuit closes and queued callbacks are delivered.
+Your endpoint returned sustained 5xx errors, which triggered per-operator backpressure. Delivery resumes automatically once your endpoint recovers — see the [Backpressure](#backpressure) section above.
 
-**Action**: Check your server logs for the root cause of the 5xx errors. Fix the underlying issue and the circuit will recover automatically.
+**Action**: Check your server logs for the root cause of the 5xx errors. Fix the underlying issue; delivery recovers without manual intervention.
 
 ---
 
