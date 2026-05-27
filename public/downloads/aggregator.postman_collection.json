@@ -1,0 +1,2138 @@
+{
+  "item": [
+    {
+      "id": "14e8bab2-54e5-49cc-9b38-1dd3eaab7a46",
+      "name": "Games",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "d0d901ec-3865-4b92-beee-2b05419ee3df",
+          "name": "List games",
+          "request": {
+            "name": "List games",
+            "description": {
+              "content": "List available games with optional filtering, search, and pagination.\nResults are scoped to the games enabled for the calling operator's\nconfigured providers and selections.\n",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "games"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": false,
+                  "key": "provider",
+                  "value": "truelabs",
+                  "description": "Filter by provider code (e.g. `truelabs`, `bgaming`)."
+                },
+                {
+                  "disabled": false,
+                  "key": "provider_game_id",
+                  "value": "string",
+                  "description": "Filter by the provider's own game identifier."
+                },
+                {
+                  "disabled": false,
+                  "key": "type",
+                  "value": "slots",
+                  "description": "Filter by game type (`slots`, `table`, `crash`, ...)."
+                },
+                {
+                  "disabled": false,
+                  "key": "volatility",
+                  "value": "high"
+                },
+                {
+                  "disabled": false,
+                  "key": "rtp_min",
+                  "value": "95"
+                },
+                {
+                  "disabled": false,
+                  "key": "rtp_max",
+                  "value": "97.5"
+                },
+                {
+                  "disabled": false,
+                  "key": "features",
+                  "value": "string",
+                  "description": "Comma-separated feature tags (e.g. `bonus_buy,megaways`)."
+                },
+                {
+                  "disabled": false,
+                  "key": "search",
+                  "value": "string",
+                  "description": "Full-text search across game names."
+                },
+                {
+                  "disabled": false,
+                  "key": "sort",
+                  "value": "name",
+                  "description": "Sort field; prefix with `-` for descending."
+                },
+                {
+                  "disabled": false,
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "disabled": false,
+                  "key": "per_page",
+                  "value": "50"
+                }
+              ],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "abeaf788-0e3d-4f97-9235-8108db853156",
+              "name": "Page of games.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "games"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "provider",
+                      "value": "truelabs"
+                    },
+                    {
+                      "key": "provider_game_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "type",
+                      "value": "slots"
+                    },
+                    {
+                      "key": "volatility",
+                      "value": "high"
+                    },
+                    {
+                      "key": "rtp_min",
+                      "value": "95"
+                    },
+                    {
+                      "key": "rtp_max",
+                      "value": "97.5"
+                    },
+                    {
+                      "key": "features",
+                      "value": "string"
+                    },
+                    {
+                      "key": "search",
+                      "value": "string"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "name"
+                    },
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "per_page",
+                      "value": "50"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Echoes the active environment for this key.",
+                  "key": "X-API-Mode",
+                  "value": "test"
+                },
+                {
+                  "disabled": false,
+                  "description": "Rate-limit ceiling for this key on this endpoint family.",
+                  "key": "X-RateLimit-Limit",
+                  "value": "6502"
+                },
+                {
+                  "disabled": false,
+                  "description": "Calls remaining in the current window.",
+                  "key": "X-RateLimit-Remaining",
+                  "value": "6502"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"games\": [\n    {\n      \"id\": \"df2b0947-025b-dff5-a33a-a862f1cb7c9d\",\n      \"provider_code\": \"truelabs\",\n      \"provider_game_id\": \"string\",\n      \"name\": \"string\",\n      \"category\": \"string\",\n      \"has_demo\": false,\n      \"brand\": \"string\",\n      \"game_type\": \"slots\",\n      \"rtp\": 17.99276298964273,\n      \"volatility\": \"low\",\n      \"has_mobile\": false,\n      \"has_desktop\": true,\n      \"thumbnail_url\": \"http://ZfbkAegukzBath.krumdCfIYox.5T0UcPUtWFcNLvf+KL1qplrjcUOS\",\n      \"blocked_countries\": [\n        \"RM\",\n        \"LT\"\n      ],\n      \"features\": [\n        \"string\",\n        \"string\"\n      ],\n      \"release_date\": \"1951-10-04\"\n    },\n    {\n      \"id\": \"4b75a935-c214-ebc8-2e0f-e19be5292bbc\",\n      \"provider_code\": \"truelabs\",\n      \"provider_game_id\": \"string\",\n      \"name\": \"string\",\n      \"category\": \"string\",\n      \"has_demo\": true,\n      \"brand\": \"string\",\n      \"game_type\": \"slots\",\n      \"rtp\": 17.505602950370346,\n      \"volatility\": \"low\",\n      \"has_mobile\": true,\n      \"has_desktop\": false,\n      \"thumbnail_url\": \"http://GcopcuRXdBErZHDjbW.pyjpPv97yGe.WybLGI6K32N.,gjXXUcvxJm5XPPU9CAYG\",\n      \"blocked_countries\": [\n        \"KH\",\n        \"MJ\"\n      ],\n      \"features\": [\n        \"string\",\n        \"string\"\n      ],\n      \"release_date\": \"1998-12-11\"\n    }\n  ],\n  \"total\": 6334,\n  \"page\": 4429,\n  \"per_page\": 8491\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "8568da0d-aa87-4695-80b1-86dfa47446ac",
+              "name": "Missing, invalid, or revoked API key.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "games"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "provider",
+                      "value": "truelabs"
+                    },
+                    {
+                      "key": "provider_game_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "type",
+                      "value": "slots"
+                    },
+                    {
+                      "key": "volatility",
+                      "value": "high"
+                    },
+                    {
+                      "key": "rtp_min",
+                      "value": "95"
+                    },
+                    {
+                      "key": "rtp_max",
+                      "value": "97.5"
+                    },
+                    {
+                      "key": "features",
+                      "value": "string"
+                    },
+                    {
+                      "key": "search",
+                      "value": "string"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "name"
+                    },
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "per_page",
+                      "value": "50"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "331b4a07-ed99-4484-a7d7-4bd22756f7ed",
+              "name": "Rate limit exceeded; consult `Retry-After`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "games"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "provider",
+                      "value": "truelabs"
+                    },
+                    {
+                      "key": "provider_game_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "type",
+                      "value": "slots"
+                    },
+                    {
+                      "key": "volatility",
+                      "value": "high"
+                    },
+                    {
+                      "key": "rtp_min",
+                      "value": "95"
+                    },
+                    {
+                      "key": "rtp_max",
+                      "value": "97.5"
+                    },
+                    {
+                      "key": "features",
+                      "value": "string"
+                    },
+                    {
+                      "key": "search",
+                      "value": "string"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "name"
+                    },
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "per_page",
+                      "value": "50"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Seconds to wait before retry.",
+                  "key": "Retry-After",
+                  "value": "6502"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "1841bc5e-b2b0-4d2e-9e47-c8169bc69312",
+          "name": "Get a game",
+          "request": {
+            "name": "Get a game",
+            "description": {
+              "content": "Retrieve a single game by its UUID.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "games",
+                ":game_id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "00f90f14-9e47-d1ef-f520-bd1cdd715e31",
+                  "key": "game_id",
+                  "description": "(Required) "
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "458e0df6-6c6d-4715-aeb8-ae240fbd68ec",
+              "name": "The requested game.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "games",
+                    ":game_id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "00f90f14-9e47-d1ef-f520-bd1cdd715e31",
+                      "key": "game_id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"game\": {\n    \"id\": \"dccd663c-0ad7-10ce-2a1f-d13354efb6e0\",\n    \"provider_code\": \"truelabs\",\n    \"provider_game_id\": \"string\",\n    \"name\": \"string\",\n    \"category\": \"string\",\n    \"has_demo\": false,\n    \"brand\": \"string\",\n    \"game_type\": \"slots\",\n    \"rtp\": 65.04205858157161,\n    \"volatility\": \"medium\",\n    \"has_mobile\": true,\n    \"has_desktop\": true,\n    \"thumbnail_url\": \"https://zFNxq.rtwdscVLNZSBTnx\",\n    \"blocked_countries\": [\n      \"PS\",\n      \"ZM\"\n    ],\n    \"features\": [\n      \"string\",\n      \"string\"\n    ],\n    \"release_date\": \"2000-10-16\"\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "2333d645-97c2-4107-8c73-9bc9fee6fccc",
+              "name": "`game_id` is not a valid UUID.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "games",
+                    ":game_id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "00f90f14-9e47-d1ef-f520-bd1cdd715e31",
+                      "key": "game_id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "1baa3d40-6dd1-4c0a-9978-fb519140e490",
+              "name": "Missing, invalid, or revoked API key.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "games",
+                    ":game_id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "00f90f14-9e47-d1ef-f520-bd1cdd715e31",
+                      "key": "game_id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "9867f7c5-3348-498b-a2b7-d26c110c1dc0",
+              "name": "No game found with that ID.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "games",
+                    ":game_id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "00f90f14-9e47-d1ef-f520-bd1cdd715e31",
+                      "key": "game_id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    },
+    {
+      "id": "44ea1e94-7539-4034-a655-5185b649f206",
+      "name": "Sessions",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "3477cada-dd82-4a73-b567-a68eafd25e56",
+          "name": "Create a real-money session",
+          "request": {
+            "name": "Create a real-money session",
+            "description": {
+              "content": "Create a real-money game session. The player is redirected to the\nreturned `game_url` to begin playing. The URL expires in 20 seconds —\ncreate the session immediately before redirecting.\n\nRequires `Idempotency-Key` header. Retries with the same key within\n24 hours return the cached response.\n",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "sessions"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": "(Required) Unique key for idempotent retry semantics. Retries within 24 hours\nreturn the cached response. Same key with a different body returns\n409 Conflict.\n",
+                "key": "Idempotency-Key",
+                "value": "u"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "auth": null,
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"game_id\": \"96a7b633-e802-5450-13f9-e915c4fc47dd\",\n  \"player_id\": \"string\",\n  \"balance\": 9850,\n  \"currency\": \"AUD\",\n  \"country\": \"PH\",\n  \"lang\": \"en\",\n  \"return_url\": \"http://ToJfayJcy.vkgznLt8YRClLBMb5aMzfaFuE09C8qe3-8jrQgBcOddcKGu,v362\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "id": "126b2bf8-b1f9-428d-91cd-8da6414070e7",
+              "name": "Session created.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "sessions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Unique key for idempotent retry semantics. Retries within 24 hours\nreturn the cached response. Same key with a different body returns\n409 Conflict.\n",
+                    "key": "Idempotency-Key",
+                    "value": "u"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"game_id\": \"96a7b633-e802-5450-13f9-e915c4fc47dd\",\n  \"player_id\": \"string\",\n  \"balance\": 9850,\n  \"currency\": \"AUD\",\n  \"country\": \"PH\",\n  \"lang\": \"en\",\n  \"return_url\": \"http://ToJfayJcy.vkgznLt8YRClLBMb5aMzfaFuE09C8qe3-8jrQgBcOddcKGu,v362\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"session_id\": \"7a5efb18-7154-19d9-45ca-972d83af3905\",\n  \"game_url\": \"http://tXcjujCVMQ.slRMQsCJmzQ11\",\n  \"expires_in\": 8805,\n  \"provider_code\": \"string\",\n  \"provider_session_uid\": \"string\",\n  \"warning\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "db403eaf-a92f-42c4-91ff-4e321fa3e900",
+              "name": "Validation failed or missing/invalid `Idempotency-Key` header.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "sessions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Unique key for idempotent retry semantics. Retries within 24 hours\nreturn the cached response. Same key with a different body returns\n409 Conflict.\n",
+                    "key": "Idempotency-Key",
+                    "value": "u"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"game_id\": \"96a7b633-e802-5450-13f9-e915c4fc47dd\",\n  \"player_id\": \"string\",\n  \"balance\": 9850,\n  \"currency\": \"AUD\",\n  \"country\": \"PH\",\n  \"lang\": \"en\",\n  \"return_url\": \"http://ToJfayJcy.vkgznLt8YRClLBMb5aMzfaFuE09C8qe3-8jrQgBcOddcKGu,v362\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "d2ead749-4063-4b21-9b2d-508dcfa5418e",
+              "name": "Missing, invalid, or revoked API key.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "sessions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Unique key for idempotent retry semantics. Retries within 24 hours\nreturn the cached response. Same key with a different body returns\n409 Conflict.\n",
+                    "key": "Idempotency-Key",
+                    "value": "u"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"game_id\": \"96a7b633-e802-5450-13f9-e915c4fc47dd\",\n  \"player_id\": \"string\",\n  \"balance\": 9850,\n  \"currency\": \"AUD\",\n  \"country\": \"PH\",\n  \"lang\": \"en\",\n  \"return_url\": \"http://ToJfayJcy.vkgznLt8YRClLBMb5aMzfaFuE09C8qe3-8jrQgBcOddcKGu,v362\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "349fc335-d901-4ceb-9680-51f08fa766e5",
+              "name": "Operator not configured for this provider, game not allowed for\noperator, jurisdiction blocked, or player self-excluded.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "sessions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Unique key for idempotent retry semantics. Retries within 24 hours\nreturn the cached response. Same key with a different body returns\n409 Conflict.\n",
+                    "key": "Idempotency-Key",
+                    "value": "u"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"game_id\": \"96a7b633-e802-5450-13f9-e915c4fc47dd\",\n  \"player_id\": \"string\",\n  \"balance\": 9850,\n  \"currency\": \"AUD\",\n  \"country\": \"PH\",\n  \"lang\": \"en\",\n  \"return_url\": \"http://ToJfayJcy.vkgznLt8YRClLBMb5aMzfaFuE09C8qe3-8jrQgBcOddcKGu,v362\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "1a65777e-87eb-474d-9ade-2dc58670f1b6",
+              "name": "Game not found.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "sessions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Unique key for idempotent retry semantics. Retries within 24 hours\nreturn the cached response. Same key with a different body returns\n409 Conflict.\n",
+                    "key": "Idempotency-Key",
+                    "value": "u"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"game_id\": \"96a7b633-e802-5450-13f9-e915c4fc47dd\",\n  \"player_id\": \"string\",\n  \"balance\": 9850,\n  \"currency\": \"AUD\",\n  \"country\": \"PH\",\n  \"lang\": \"en\",\n  \"return_url\": \"http://ToJfayJcy.vkgznLt8YRClLBMb5aMzfaFuE09C8qe3-8jrQgBcOddcKGu,v362\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "2fcfe3c5-8ceb-481a-911f-785399b6a239",
+              "name": "Idempotency key reused with a different request body.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "sessions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Unique key for idempotent retry semantics. Retries within 24 hours\nreturn the cached response. Same key with a different body returns\n409 Conflict.\n",
+                    "key": "Idempotency-Key",
+                    "value": "u"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"game_id\": \"96a7b633-e802-5450-13f9-e915c4fc47dd\",\n  \"player_id\": \"string\",\n  \"balance\": 9850,\n  \"currency\": \"AUD\",\n  \"country\": \"PH\",\n  \"lang\": \"en\",\n  \"return_url\": \"http://ToJfayJcy.vkgznLt8YRClLBMb5aMzfaFuE09C8qe3-8jrQgBcOddcKGu,v362\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "09563116-658d-40a0-84db-b63b6c86ca10",
+              "name": "Rate limit exceeded; consult `Retry-After`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "sessions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Unique key for idempotent retry semantics. Retries within 24 hours\nreturn the cached response. Same key with a different body returns\n409 Conflict.\n",
+                    "key": "Idempotency-Key",
+                    "value": "u"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"game_id\": \"96a7b633-e802-5450-13f9-e915c4fc47dd\",\n  \"player_id\": \"string\",\n  \"balance\": 9850,\n  \"currency\": \"AUD\",\n  \"country\": \"PH\",\n  \"lang\": \"en\",\n  \"return_url\": \"http://ToJfayJcy.vkgznLt8YRClLBMb5aMzfaFuE09C8qe3-8jrQgBcOddcKGu,v362\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Seconds to wait before retry.",
+                  "key": "Retry-After",
+                  "value": "6502"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "333acf62-afea-47ab-b0db-4ac19617ef33",
+              "name": "Provider returned an error when creating the session.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "sessions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Unique key for idempotent retry semantics. Retries within 24 hours\nreturn the cached response. Same key with a different body returns\n409 Conflict.\n",
+                    "key": "Idempotency-Key",
+                    "value": "u"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"game_id\": \"96a7b633-e802-5450-13f9-e915c4fc47dd\",\n  \"player_id\": \"string\",\n  \"balance\": 9850,\n  \"currency\": \"AUD\",\n  \"country\": \"PH\",\n  \"lang\": \"en\",\n  \"return_url\": \"http://ToJfayJcy.vkgznLt8YRClLBMb5aMzfaFuE09C8qe3-8jrQgBcOddcKGu,v362\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Bad Gateway",
+              "code": 502,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "38584694-8f7a-428a-8be5-4e0cad75cb5b",
+              "name": "Provider temporarily unavailable.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "sessions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Unique key for idempotent retry semantics. Retries within 24 hours\nreturn the cached response. Same key with a different body returns\n409 Conflict.\n",
+                    "key": "Idempotency-Key",
+                    "value": "u"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"game_id\": \"96a7b633-e802-5450-13f9-e915c4fc47dd\",\n  \"player_id\": \"string\",\n  \"balance\": 9850,\n  \"currency\": \"AUD\",\n  \"country\": \"PH\",\n  \"lang\": \"en\",\n  \"return_url\": \"http://ToJfayJcy.vkgznLt8YRClLBMb5aMzfaFuE09C8qe3-8jrQgBcOddcKGu,v362\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Service Unavailable",
+              "code": 503,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "4eec296a-d6a7-45a2-b7dc-91f07be2cb77",
+          "name": "Create a demo session",
+          "request": {
+            "name": "Create a demo session",
+            "description": {
+              "content": "Launch a demo game session. No real-money wallet involvement; no bet\nor win callbacks emitted. Useful for sandbox testing or\nprospect-facing free-play surfaces.\n",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "demo-sessions"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": "(Required) Unique key for idempotent retry semantics. Retries within 24 hours\nreturn the cached response. Same key with a different body returns\n409 Conflict.\n",
+                "key": "Idempotency-Key",
+                "value": "u"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "auth": null,
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"game_id\": \"73709de8-204a-39fd-5dcb-7499f674ee8e\",\n  \"lang\": \"en\",\n  \"return_url\": \"https://LjukhMcAXuceJPLDvoQNHHWJdP.qpyzP0nV2gOKjzO3PLZUshC8nl,Q6XUw\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "id": "405fa8f5-1bdc-4b4a-b657-5adaca8dc2b0",
+              "name": "Demo session created.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "demo-sessions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Unique key for idempotent retry semantics. Retries within 24 hours\nreturn the cached response. Same key with a different body returns\n409 Conflict.\n",
+                    "key": "Idempotency-Key",
+                    "value": "u"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"game_id\": \"73709de8-204a-39fd-5dcb-7499f674ee8e\",\n  \"lang\": \"en\",\n  \"return_url\": \"https://LjukhMcAXuceJPLDvoQNHHWJdP.qpyzP0nV2gOKjzO3PLZUshC8nl,Q6XUw\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"session_id\": \"7a5efb18-7154-19d9-45ca-972d83af3905\",\n  \"game_url\": \"http://tXcjujCVMQ.slRMQsCJmzQ11\",\n  \"expires_in\": 8805,\n  \"provider_code\": \"string\",\n  \"provider_session_uid\": \"string\",\n  \"warning\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "5a01e51f-5aad-4e11-8ce3-796d33fff4af",
+              "name": "Missing, invalid, or revoked API key.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "demo-sessions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Unique key for idempotent retry semantics. Retries within 24 hours\nreturn the cached response. Same key with a different body returns\n409 Conflict.\n",
+                    "key": "Idempotency-Key",
+                    "value": "u"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"game_id\": \"73709de8-204a-39fd-5dcb-7499f674ee8e\",\n  \"lang\": \"en\",\n  \"return_url\": \"https://LjukhMcAXuceJPLDvoQNHHWJdP.qpyzP0nV2gOKjzO3PLZUshC8nl,Q6XUw\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "1fdf47e1-137b-44ed-a4b7-ff90f08edaca",
+              "name": "Game not found or does not support demo mode.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "demo-sessions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Unique key for idempotent retry semantics. Retries within 24 hours\nreturn the cached response. Same key with a different body returns\n409 Conflict.\n",
+                    "key": "Idempotency-Key",
+                    "value": "u"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"game_id\": \"73709de8-204a-39fd-5dcb-7499f674ee8e\",\n  \"lang\": \"en\",\n  \"return_url\": \"https://LjukhMcAXuceJPLDvoQNHHWJdP.qpyzP0nV2gOKjzO3PLZUshC8nl,Q6XUw\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "242b8c6c-cc45-417b-8caa-721332e16022",
+          "name": "Get session details",
+          "request": {
+            "name": "Get session details",
+            "description": {
+              "content": "Retrieve metadata about a previously-created session.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "sessions",
+                ":session_id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "00f90f14-9e47-d1ef-f520-bd1cdd715e31",
+                  "key": "session_id",
+                  "description": "(Required) "
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "2f088a15-f492-44b5-bdc9-6b1872fb4eb8",
+              "name": "Session details.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "sessions",
+                    ":session_id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "00f90f14-9e47-d1ef-f520-bd1cdd715e31",
+                      "key": "session_id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"session_id\": \"a2b19e0d-36c9-1011-88c0-03163b13e549\",\n  \"status\": \"open\",\n  \"game_id\": \"aad2421f-1703-068c-35e1-21de7e46285f\",\n  \"provider_code\": \"string\",\n  \"created_at\": \"1998-07-06T23:23:32.605Z\",\n  \"player_id\": \"string\",\n  \"currency\": \"string\",\n  \"country\": \"string\",\n  \"closed_at\": \"1995-07-29T10:16:58.398Z\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "89e524f5-e5b7-4dca-8602-ff645e99bf21",
+              "name": "Missing, invalid, or revoked API key.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "sessions",
+                    ":session_id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "00f90f14-9e47-d1ef-f520-bd1cdd715e31",
+                      "key": "session_id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "40f27509-8e13-4970-bcff-f5fcd4b2212c",
+              "name": "Session not found.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "sessions",
+                    ":session_id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "00f90f14-9e47-d1ef-f520-bd1cdd715e31",
+                      "key": "session_id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    },
+    {
+      "id": "42130380-8c41-4d4d-831f-5348aee54bab",
+      "name": "Transactions",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "dc5262af-d67d-4046-876d-56131f51edb8",
+          "name": "List transactions",
+          "request": {
+            "name": "List transactions",
+            "description": {
+              "content": "List bet and win transactions for a session or player, with optional\ntime-range filtering and pagination. Used for reconciliation against\nyour wallet ledger.\n",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "transactions"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": false,
+                  "key": "session_id",
+                  "value": "00f90f14-9e47-d1ef-f520-bd1cdd715e31"
+                },
+                {
+                  "disabled": false,
+                  "key": "player_id",
+                  "value": "string"
+                },
+                {
+                  "disabled": false,
+                  "key": "type",
+                  "value": "bet"
+                },
+                {
+                  "disabled": false,
+                  "key": "from",
+                  "value": "1989-11-22T20:34:06.777Z",
+                  "description": "Inclusive lower bound on `created_at`."
+                },
+                {
+                  "disabled": false,
+                  "key": "to",
+                  "value": "1989-11-22T20:34:06.777Z",
+                  "description": "Exclusive upper bound on `created_at`."
+                },
+                {
+                  "disabled": false,
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "disabled": false,
+                  "key": "per_page",
+                  "value": "50"
+                }
+              ],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "690cefbe-6de5-4a30-b603-11a6984852aa",
+              "name": "Page of transactions.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "transactions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "session_id",
+                      "value": "00f90f14-9e47-d1ef-f520-bd1cdd715e31"
+                    },
+                    {
+                      "key": "player_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "type",
+                      "value": "bet"
+                    },
+                    {
+                      "key": "from",
+                      "value": "1989-11-22T20:34:06.777Z"
+                    },
+                    {
+                      "key": "to",
+                      "value": "1989-11-22T20:34:06.777Z"
+                    },
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "per_page",
+                      "value": "50"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"transactions\": [\n    {\n      \"id\": \"ffc2f467-f097-7f02-352d-179d1c3d3316\",\n      \"session_id\": \"f2ae7c74-4e3a-c3cb-fd67-c1df7a2848d7\",\n      \"type\": \"bet\",\n      \"amount\": 3185,\n      \"currency\": \"string\",\n      \"created_at\": \"2003-05-11T21:15:35.800Z\",\n      \"player_id\": \"string\",\n      \"provider_code\": \"string\",\n      \"provider_round_id\": \"string\",\n      \"operator_status\": 7598,\n      \"status\": \"forwarded\"\n    },\n    {\n      \"id\": \"27cb41e1-27b0-dd05-ae49-c2f999cb8209\",\n      \"session_id\": \"f8c1df8b-7433-46da-90f7-dc104c5035d7\",\n      \"type\": \"win\",\n      \"amount\": 7747,\n      \"currency\": \"string\",\n      \"created_at\": \"2000-12-28T19:28:43.909Z\",\n      \"player_id\": \"string\",\n      \"provider_code\": \"string\",\n      \"provider_round_id\": \"string\",\n      \"operator_status\": 6642,\n      \"status\": \"rejected\"\n    }\n  ],\n  \"total\": 7441,\n  \"page\": 7818,\n  \"per_page\": 5381\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "5cf4db4e-fd7e-4ce2-bbfa-e608ed800c51",
+              "name": "Missing, invalid, or revoked API key.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "transactions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "session_id",
+                      "value": "00f90f14-9e47-d1ef-f520-bd1cdd715e31"
+                    },
+                    {
+                      "key": "player_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "type",
+                      "value": "bet"
+                    },
+                    {
+                      "key": "from",
+                      "value": "1989-11-22T20:34:06.777Z"
+                    },
+                    {
+                      "key": "to",
+                      "value": "1989-11-22T20:34:06.777Z"
+                    },
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "per_page",
+                      "value": "50"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    },
+    {
+      "id": "7bea3dd6-5677-4013-8488-2444f97bfb32",
+      "name": "Health",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "62dfe9e9-122e-4ce5-b8f1-fc91ac3d3309",
+          "name": "Liveness probe",
+          "request": {
+            "name": "Liveness probe",
+            "description": {
+              "content": "Returns 200 if the API process is up.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "health"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "94054c3a-c78b-4643-a560-8bc1e425b246",
+              "name": "Service is alive.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "health"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"ok\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "15757ef4-541b-461c-ad4d-7e776516cd3f",
+          "name": "Readiness probe",
+          "request": {
+            "name": "Readiness probe",
+            "description": {
+              "content": "Returns 200 if the API can serve traffic (DB reachable, etc.).",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "ready"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "7107a985-a770-4616-9572-e0ddac5703e0",
+              "name": "Service is ready.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ready"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"ready\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "1e062520-03e6-4a93-acfe-4511a4a8e454",
+              "name": "Service is not ready (one or more dependencies unreachable).",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ready"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Service Unavailable",
+              "code": 503,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/plain"
+                }
+              ],
+              "body": "",
+              "cookie": [],
+              "_postman_previewlanguage": "text"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "type": "string",
+      "value": "{{base_url}}",
+      "key": "baseUrl"
+    },
+    {
+      "key": "base_url",
+      "value": "{{base_url}}",
+      "type": "string"
+    },
+    {
+      "key": "apiKey",
+      "value": "sk_live_REPLACE_ME",
+      "type": "string",
+      "description": "Your operator API key from app.aggregator.gg/api-keys. Replace before sending requests."
+    },
+    {
+      "key": "idempotencyKey",
+      "value": "{{$randomUUID}}",
+      "type": "string",
+      "description": "Auto-generated unique key for retryable POSTs. Postman regenerates per-request because $randomUUID is a dynamic variable."
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{bearerToken}}"
+      }
+    ]
+  },
+  "info": {
+    "_postman_id": "c61de3cd-8a8e-4f21-93bc-ff98f237a292",
+    "name": "The Aggregator Machine API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": {
+      "content": "B2B game aggregation platform. Server-to-server REST API for operators to\nbrowse the game catalog, launch real-money and demo sessions, and query\ntransactions.\n\n**Authentication**: Bearer token via `Authorization` header. All\noperator API keys are prefixed `sk_live_*`. Welcome credits make\npre-launch testing safe — see docs.aggregator.gg/get-started/environments/.\n\n**Versioning**: Hybrid path-version (`/v1/`) plus `Aggregator-Version`\nheader for additive minor revisions. See\nhttps://docs.aggregator.gg/resources/versioning/.\n\n**Idempotency**: POST endpoints touching financial state require an\n`Idempotency-Key` header. Cached responses replay for 24 hours.\n\nThis spec is the source of truth. CI rejects route changes that drift\nfrom this file via a schemathesis conformance test.\n\n\nContact Support:\n Name: Aggregator API support",
+      "type": "text/plain"
+    }
+  }
+}

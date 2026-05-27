@@ -1,0 +1,50 @@
+---
+title: "Postman collection"
+description: "Pre-configured Postman / Insomnia collection covering every endpoint in the Machine API, generated from the OpenAPI spec."
+---
+
+import { LinkCard } from '@astrojs/starlight/components';
+
+The Machine API ships with a Postman collection generated automatically from the [OpenAPI 3.1 spec](https://github.com/aggregator-gg/docs/blob/main/openapi/aggregator.yaml). Import it once, then iterate on requests without typing curls by hand.
+
+<LinkCard title="Download collection" href="/downloads/aggregator.postman_collection.json" description="Postman Collection v2.1.0 · JSON" />
+
+## What's inside
+
+- Every operation in `openapi.yaml`, grouped by tag (Games, Sessions, Transactions, Health)
+- Body schemas pre-filled with example values
+- Three collection variables you can edit once and reuse everywhere
+
+| Variable | Default | What to do |
+|---|---|---|
+| `base_url` | `https://api.aggregator.gg/v1` | Switch to `https://api.the-aggregator.io/v1` for staging |
+| `apiKey` | `sk_live_REPLACE_ME` | Paste your real key (see [Authentication](/get-started/authentication/)) |
+| `idempotencyKey` | `{{$randomUUID}}` | Leave as-is — Postman regenerates a UUID per request |
+
+## Import
+
+### Postman
+
+1. Postman → **File** → **Import** → drag the downloaded JSON
+2. The collection appears under your workspace
+3. Open the collection's **Variables** tab and paste your real `apiKey`
+4. Send any request
+
+### Insomnia
+
+1. Insomnia → **Application Menu** → **Import** → choose **From File** → pick the JSON
+2. Update the environment variables in the **Manage Environments** dialog
+
+### Hurl / Bruno / other tools
+
+The collection is JSON in the standard Postman v2.1 format. Most modern API clients import it directly.
+
+## How it's built
+
+Every CI build of `docs.aggregator.gg` regenerates the collection from `openapi/aggregator.yaml` via the [`openapi-to-postmanv2`](https://github.com/postmanlabs/openapi-to-postman) converter. The download URL is stable — bookmark it.
+
+The generation script lives at [`scripts/build-postman.mjs`](https://github.com/aggregator-gg/docs/blob/main/scripts/build-postman.mjs) in the docs repo.
+
+## When the spec changes
+
+Re-download the JSON. Postman does not auto-sync, so you should refresh the collection whenever we publish a [Changelog](/resources/changelog/) entry that affects request or response shapes.

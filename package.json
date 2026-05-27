@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro build",
+    "build": "node scripts/build-postman.mjs && astro build",
+    "build:postman": "node scripts/build-postman.mjs",
     "preview": "astro preview",
     "astro": "astro"
   },
@@ -16,5 +17,8 @@
     "astro": "^6.3.1",
     "sharp": "^0.34.5",
     "starlight-openapi": "^0.18.0"
+  },
+  "devDependencies": {
+    "openapi-to-postmanv2": "^6.0.1"
   }
 }
