@@ -29,3 +29,25 @@
 	--sl-color-gray-7: #f3f4f6;
 	--sl-color-black: #ffffff;
 }
+
+/* GFM task-list rendering: hide list bullet on items that contain a
+ * checkbox so we get "☐ Replace …" instead of "• ☐ Replace …".
+ * Astro 6 emits remark-gfm checkbox markup but Starlight does not strip
+ * the default ul/ol bullet from task-list items by default. */
+.sl-markdown-content ul:has(> li > input[type='checkbox']),
+.sl-markdown-content ul.contains-task-list {
+	list-style: none;
+	padding-left: 0;
+}
+
+.sl-markdown-content li:has(> input[type='checkbox']),
+.sl-markdown-content li.task-list-item {
+	list-style: none;
+	margin-left: 0;
+}
+
+.sl-markdown-content li > input[type='checkbox'] {
+	margin-right: 0.5rem;
+	transform: translateY(2px);
+	accent-color: var(--sl-color-accent);
+}

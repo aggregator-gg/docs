@@ -21,7 +21,7 @@ info:
     from this file via a schemathesis conformance test.
   contact:
     name: Aggregator API support
-    url: https://docs.aggregator.gg/resources/support
+    url: https://docs.aggregator.gg/
   license:
     name: Proprietary
 servers:
