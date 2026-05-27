@@ -5,7 +5,7 @@ Public API documentation for The Aggregator — `https://docs.aggregator.gg`.
 Built with [Astro Starlight](https://starlight.astro.build/) and
 [`starlight-openapi`](https://starlight-openapi.vercel.app/). Hosted on
 Cloudflare Pages. Architecture source of truth:
-[ADR-027](https://github.com/aggregator-gg/aggregator/blob/main/docs/architecture/ADR-027-PUBLIC-API-DOCS.md).
+[ADR-032](https://github.com/aggregator-gg/aggregator/blob/main/docs/architecture/ADR-032-PUBLIC-API-DOCS.md).
 
 ## Local development
 

@@ -39,7 +39,7 @@ export default defineConfig({
 						base: 'api/v1',
 						// Spec is synced from aggregator-gg/aggregator:docs/api/openapi.yaml
 						// via .github/workflows/sync.yml (Core merge → docs PR).
-						// See ADR-027 Decision 2 in the aggregator repo.
+						// See ADR-032 Decision 2 in the aggregator repo.
 						schema: './openapi/aggregator.yaml',
 						sidebar: {
 							label: 'API Reference',
@@ -91,7 +91,7 @@ export default defineConfig({
 			],
 			head: [
 				// robots.txt is served from public/robots.txt — see Decision 8
-				// of ADR-027. Preview hostnames return Disallow: / via _headers
+				// of ADR-032. Preview hostnames return Disallow: / via _headers
 				// rewrites configured in Cloudflare Pages.
 			],
 		}),

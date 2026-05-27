@@ -8,7 +8,7 @@
  * Served by Astro at /downloads/aggregator.postman_collection.json
  * and referenced from /resources/postman/.
  *
- * Implements ADR-027 Decision 10 — Postman collection over Try-it-now.
+ * Implements ADR-032 Decision 10 — Postman collection over Try-it-now.
  */
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
