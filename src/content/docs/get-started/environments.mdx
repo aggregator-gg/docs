@@ -9,16 +9,13 @@ To make pre-launch testing safe, every new operator account is provisioned with 
 
 When the welcome pack runs out, you fund your operator wallet with credits the normal way (in-cabinet purchase or invoice billing) and continue.
 
-## Base URLs
+## Base URL
 
-Both rows below speak the same API. Pick whichever cluster matches your operator account.
+```
+https://api.aggregator.gg/v1
+```
 
-| Environment    | Base URL                              | Who uses it |
-|----------------|---------------------------------------|-------------|
-| **Production** | `https://api.aggregator.gg/v1`        | All operators after the platform team activates the account. |
-| **Staging**    | `https://api.aggregator.gg/v1`    | Early-access partners running pre-launch integration QA against a separate cluster with its own data and its own welcome credits. Ask your account contact if you need access. |
-
-Staging is **not** for ongoing test traffic once you are live — it has separate operator accounts, separate API keys, and separate balance ledgers. Use welcome credits + demo sessions in production for ongoing testing.
+All operator integrations use this single base URL. Pre-launch testing uses **welcome credits** + **demo sessions** (see below) — not a separate test cluster.
 
 ## How welcome credits work
 

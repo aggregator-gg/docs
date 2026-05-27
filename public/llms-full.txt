@@ -1,0 +1,2602 @@
+# The Aggregator API — full documentation
+
+Single-file concatenation of every curated guide on https://docs.aggregator.gg.
+Source of truth for the machine contract is the OpenAPI spec — fetch it separately:
+  https://raw.githubusercontent.com/aggregator-gg/docs/main/openapi/aggregator.yaml
+
+
+# Get Started
+
+<!-- get-started/introduction -->
+
+The Aggregator is a B2B game aggregation platform. We connect **game providers** (casino content studios — TRUE LABS, BGaming, Zillion, Megafair, eBaka, and more) with **operators** (casinos that run player-facing front-ends) through one normalised REST API.
+
+## Who this is for
+
+This documentation covers the **Machine API** — the server-to-server interface operators use to:
+
+- Browse and filter the unified game catalog
+- Launch real-money and demo game sessions
+- Receive HMAC-signed wallet callbacks for bets and wins
+- Query transaction history for reconciliation
+
+If you are looking for the cabinet UI, the analytics dashboard, or the affiliate portal, sign in at [app.aggregator.gg](https://app.aggregator.gg).
+
+## What the platform handles for you
+
+- **Provider integration normalisation** — each provider's launch protocol, callback shape, and signature scheme is translated into one canonical contract.
+- **Game catalog deduplication** — same game across multiple providers surfaces once.
+- **Session state** — open, paused, expired, settled.
+- **Callback routing + replay protection** — HMAC verification, IP allowlists per provider, 15-minute timestamp window.
+- **Financial ledger** — immutable, append-only, reconciliation tooling included.
+- **Compliance gates** — self-exclusion, GeoIP jurisdiction blocking, license checks (fail-closed by default).
+
+## What you remain responsible for
+
+- **Player wallet** — you hold balances. We tell you when to debit (`bet`) and credit (`win`).
+- **Player KYC** — verifying real-money players is on you.
+- **Responsible gaming surfaces** — deposit limits, reality checks, session caps are operator-configurable; surfacing them to players is your UX.
+- **Licensing** — your operating licenses for your jurisdiction.
+
+## Read next
+
+- [Quickstart](/get-started/quickstart/) — your first game launch in 15 minutes.
+- [How a game round works](/get-started/how-a-round-works/) — the full lifecycle.
+- [Authentication](/get-started/authentication/) — API keys and environments.
+
+---
+
+<!-- get-started/quickstart -->
+
+This page is being written. In the meantime, see the full [Integration walkthrough](/guides/integration/) for the complete onboarding flow.
+
+## What you need
+
+- An operator account at [app.aggregator.gg](https://app.aggregator.gg/register)
+- A `sk_test_*` API key (created in the cabinet under **API Keys**)
+- A server that can receive HTTPS callbacks on a public URL
+
+## Five-step path
+
+1. Create your test API key in the cabinet
+2. List available games: `GET /v1/games`
+3. Launch a demo session: `POST /v1/demo-sessions`
+4. Set your callback URL in the cabinet
+5. Receive a HMAC-signed bet/win callback and respond with `200`
+
+Detailed walkthrough in the [Integration guide](/guides/integration/).
+
+---
+
+<!-- get-started/authentication -->
+
+Every request to the Machine API must include a Bearer token in the `Authorization` header:
+
+```http
+Authorization: Bearer sk_live_a1b2c3d4e5f6...
+```
+
+You obtain API keys from the operator dashboard at [app.aggregator.gg/api-keys](https://app.aggregator.gg/api-keys).
+
+## Key format
+
+All operator API keys are prefixed `sk_live_*`. There is no separate sandbox or test key tier — your `sk_live_*` key is the same key you use for welcome-pack testing and for live customer traffic. See [Environments & testing](/get-started/environments/) for how welcome credits make pre-launch testing safe.
+
+## Key rotation
+
+Keys can be rotated with a 24-hour overlap window so you can deploy the new key before retiring the old one:
+
+1. In the cabinet, click **Rotate** on the active key
+2. A new `sk_live_*` key is generated; the old key is marked `deprecated_at: <now>`
+3. Both keys are accepted for the next 24 hours
+4. After 24h the old key is automatically revoked
+
+We recommend rotating production keys every 90 days.
+
+## Rate limits
+
+Default rate limits per key:
+
+- **100 requests/second** sustained
+- **500 requests/second** burst (5-second window)
+- **10 failed authentication attempts/minute per IP** (brute-force protection)
+
+Exceeded limits return `429 Too Many Requests` with a `Retry-After` header.
+
+## Scopes (coming soon)
+
+API key scopes (`read`, `write`, `admin`) are in roadmap. Today all `sk_live_*` keys have full read+write on the issuing operator's resources.
+
+## Security best practices
+
+- **Never commit keys to git.** Use environment variables or a secret manager (1Password, Vault, AWS Secrets Manager).
+- **Never expose `sk_live_*` keys in browser-side code.** This API is server-to-server only.
+- **Rotate on suspected compromise.** Revoke the old key immediately if you believe it leaked.
+- **Use a dedicated rotated key for CI/integration tests** rather than your production key. The cabinet lets you tag keys with names (e.g. `prod-main`, `ci-runner`) and revoke them independently.
+- **Treat welcome-pack traffic the same as paying traffic.** The platform does not distinguish them in the API — and neither should your code.
+
+---
+
+<!-- get-started/environments -->
+
+The Aggregator has **one production environment**. There is no separate "test" or "sandbox" key tier — you get one `sk_live_*` API key when you register, and you use it for both integration testing and live traffic.
+
+To make pre-launch testing safe, every new operator account is provisioned with a **welcome credit pack** — a small pool of real-money credits that the platform funds. You can use those credits to launch real provider sessions, receive real wallet callbacks, and exercise the entire money path without funding your own wallet first.
+
+When the welcome pack runs out, you fund your operator wallet with credits the normal way (in-cabinet purchase or invoice billing) and continue.
+
+## Base URL
+
+```
+https://api.aggregator.gg/v1
+```
+
+All operator integrations use this single base URL. Pre-launch testing uses **welcome credits** + **demo sessions** (see below) — not a separate test cluster.
+
+## How welcome credits work
+
+1. You register your operator account in the [cabinet](https://app.aggregator.gg/register).
+2. The platform team activates your account and credits the welcome pack (typically tens to hundreds of real spins, depending on launch agreement).
+3. Your `sk_live_*` key processes real-money sessions immediately.
+4. Bets are charged against your operator wallet; the welcome pack subsidises that wallet until it is depleted.
+5. Once welcome credits are used up, you continue funding the wallet through the normal billing flow.
+
+The platform does not distinguish "welcome traffic" from "paid traffic" anywhere in the API surface — every session, transaction, and callback looks identical regardless of which credit source is paying. You do not need to flag test traffic.
+
+## Demo sessions — no money at all
+
+If you want to launch a game purely to inspect the UI or render a preview iframe without any wallet movement, use [`POST /v1/demo-sessions`](/api/v1/operations/createdemosession/) instead of `/v1/sessions`. Demo sessions:
+
+- Do not debit any wallet
+- Do not emit `bet` or `win` callbacks
+- Have no impact on your welcome credit balance
+
+Use demo sessions for marketing previews, lobby thumbnails, or showing a game inside your cabinet without any money flow.
+
+## Welcome-pack best practices
+
+- **Treat it like production from day one.** The same money-path code that handles a welcome-pack spin will handle your real customer's first deposit. Do not branch on "is this a test bet?" anywhere — the API does not give you that distinction, and code that branches on it ages badly.
+- **Run your full callback verification path.** Wallet callbacks during welcome-pack testing are real HMAC-signed callbacks from the real provider. If your signature verification has a bug, you find out now, not after you go live.
+- **Reconcile against the [transactions API](/api/v1/operations/listtransactions/).** Before you exhaust the welcome pack, confirm your wallet ledger matches what the platform records. Any drift discovered now is much cheaper to fix than the same drift after real-money traffic starts.
+
+## Rate limits
+
+Default rate limits per `sk_live_*` key:
+
+- **100 requests/second** sustained
+- **500 requests/second** burst (5-second window)
+- **10 failed authentication attempts/minute per IP** (brute-force protection)
+
+Exceeded limits return `429 Too Many Requests` with a `Retry-After` header.
+
+## Read next
+
+- [Authentication](/get-started/authentication/) — API key format, rotation, security
+- [How a game round works](/get-started/how-a-round-works/) — full session lifecycle
+- [Integration walkthrough](/guides/integration/) — code path from registration to first round
+
+---
+
+<!-- get-started/how-a-round-works -->
+
+Every game round flows through three actors: **your operator backend**, **The Aggregator**, and **the game provider**. The player sees only the game iframe; you orchestrate the wallet.
+
+## The lifecycle
+
+```mermaid
+sequenceDiagram
+    participant Player
+    participant Operator
+    participant Aggregator
+    participant Provider
+
+    Player->>Operator: Opens game lobby
+    Operator->>Aggregator: POST /v1/sessions (game_id, player_id, balance)
+    Aggregator->>Provider: Create session
+    Provider-->>Aggregator: Session URL
+    Aggregator-->>Operator: { session_id, game_url }
+    Operator->>Player: Redirect to game_url
+    Player->>Provider: Plays the game
+    Provider->>Aggregator: Bet callback (HMAC-signed)
+    Aggregator->>Operator: POST /your-callback (bet)
+    Operator-->>Aggregator: 200 OK (debited wallet)
+    Provider->>Aggregator: Win callback (HMAC-signed)
+    Aggregator->>Operator: POST /your-callback (win)
+    Operator-->>Aggregator: 200 OK (credited wallet)
+    Player->>Operator: Closes game
+```
+
+## Step-by-step
+
+1. **Player opens your lobby.** Your front-end calls your backend with the game they want to play.
+
+2. **You create a session.** `POST /v1/sessions` with `game_id`, `player_id`, `balance`, and currency. The Aggregator returns `session_id` and `game_url`.
+
+3. **You redirect the player.** The `game_url` is a short-lived (20-second) signed URL. Embed it in an iframe or redirect the browser.
+
+4. **Provider sends bet callback.** Each spin triggers an HMAC-signed callback to your configured `callback_url`. Verify the signature, debit the player's wallet, return `200`.
+
+5. **Provider sends win callback.** When the spin resolves, you receive a `win` callback (zero-amount wins are also delivered). Credit the player's wallet, return `200`.
+
+6. **Player exits.** The session stays open for replays. No explicit close call needed — sessions expire automatically.
+
+## Important constraints
+
+- **`game_url` expires in 20 seconds.** Create the session immediately before redirecting the player; don't pre-fetch hours in advance.
+- **Callbacks may arrive out-of-order** under network jitter. The Aggregator does best-effort ordering but cannot guarantee strict sequence. Idempotency-Key dedup is on you.
+- **A session can have many bets and wins.** Slot games typically generate one bet and one win per spin; live casino games can interleave them differently.
+- **Failed callback (you return non-2xx) triggers retries** with exponential backoff. See [Wallet callbacks](/guides/wallet-callbacks/) for retry semantics.
+
+## Read next
+
+- [Integration walkthrough](/guides/integration/) — full code path
+- [Wallet callbacks](/guides/wallet-callbacks/) — callback payloads and retry behaviour
+- [Signature verification](/guides/signature-verification/) — HMAC verification snippets in TypeScript / PHP / Python
+
+---
+
+
+# Guides
+
+<!-- guides/integration -->
+
+This guide walks you through integrating with The Aggregator from start to go-live. After completing the steps below, you will have a working game integration that can launch real-money sessions and process wallet callbacks.
+
+**Time estimate**: 2--4 hours for a basic integration; 1--2 days for production-ready with full callback handling.
+
+**Prerequisites**:
+- An operator account in The Aggregator cabinet ([register here](https://app.aggregator.gg/register))
+- A server that can receive HTTPS callbacks on a public URL
+- Familiarity with REST APIs and webhook/callback patterns
+
+---
+
+## How a Game Round Works
+
+Before you start writing code, here is the full lifecycle of a single game round. Every integration you build follows this flow.
+
+```mermaid
+sequenceDiagram
+    participant Player
+    participant Operator
+    participant Aggregator
+    participant Provider
+
+    Player->>Operator: Opens game lobby
+    Operator->>Aggregator: POST /v1/sessions (game_id, player_id, balance)
+    Aggregator->>Provider: Create session
+    Provider-->>Aggregator: Session URL
+    Aggregator-->>Operator: { session_id, game_url }
+    Operator->>Player: Redirect to game_url
+
+    Note over Player, Provider: Player places a bet
+
+    Provider->>Aggregator: Bet callback
+    Aggregator->>Operator: POST {callback_url} (bet transaction)
+    Operator-->>Aggregator: 200 OK { balance: 9500 }
+    Aggregator-->>Provider: Balance confirmed
+
+    Note over Player, Provider: Player wins
+
+    Provider->>Aggregator: Win callback
+    Aggregator->>Operator: POST {callback_url} (win transaction)
+    Operator-->>Aggregator: 200 OK { balance: 12000 }
+    Aggregator-->>Provider: Balance confirmed
+
+    Player->>Operator: Closes game (redirected to return_url)
+```
+
+Key points to understand:
+
+1. **You own the wallet.** The Aggregator never holds player funds. Every bet deducts from your ledger; every win credits your ledger.
+2. **Callbacks are synchronous.** The game provider waits for your response before showing the result to the player. Your callback endpoint must respond within 5 seconds.
+3. **Idempotency is required.** You may receive the same callback more than once. Use the `transaction_id` to deduplicate.
+
+---
+
+## Step 1: Get Your Credentials
+
+1. Register as an operator at [app.aggregator.gg/register](https://app.aggregator.gg/register).
+2. Complete the KYB (Know Your Business) verification in the operator cabinet.
+3. Navigate to **API Keys** in your cabinet.
+4. Create your `sk_live_*` API key. This is the only key tier the platform issues — you'll use the same key for integration testing and for live customer traffic.
+5. Copy the key. **It is shown once** at creation time.
+6. Copy your **callback secret** from the same page. You use this to verify callback signatures.
+
+> **Welcome credit pack**: every new operator account is provisioned with a small pool of real-money credits funded by the platform. You can run real provider sessions, receive real callbacks, and exercise the full money path before funding your own wallet. Once welcome credits are depleted, you fund the wallet through the normal billing flow. See [Environments & testing](/get-started/environments/) for details.
+
+> **Security**: Store your API key and callback secret in environment variables or a secrets manager. Never commit them to source control. Never expose the key in browser-side code — this API is server-to-server only.
+
+---
+
+## Step 2: Explore the Game Catalog
+
+Use your `sk_live_*` key to browse available games.
+
+**Request:**
+
+```bash
+curl -X GET "https://api.aggregator.gg/v1/games?per_page=5" \
+  -H "Authorization: Bearer sk_live_xxx"
+```
+
+**Response:**
+
+```json
+{
+  "games": [
+    {
+      "id": "game_abc123",
+      "name": "Book of Sun",
+      "provider_code": "truelabs",
+      "game_type": "slots",
+      "rtp": 96.5,
+      "volatility": "high",
+      "has_mobile": true,
+      "has_desktop": true,
+      "has_demo": true,
+      "thumbnail_url": "https://cdn.aggregator.gg/thumbs/book-of-sun.jpg",
+      "blocked_countries": ["US", "GB"],
+      "features": ["free_spins", "bonus_buy"]
+    }
+  ],
+  "total": 142,
+  "page": 1,
+  "per_page": 5
+}
+```
+
+**Using the SDK:**
+
+```typescript
+
+const aggregator = new Aggregator({ apiKey: "sk_live_xxx" });
+
+const { games, total } = await aggregator.games.list({
+  type: "slots",
+  rtp_min: 95,
+  per_page: 25,
+});
+
+console.log(`Found ${total} games`);
+```
+
+You can filter by provider, game type, volatility, RTP range, features, and full-text search. See the [full API reference](/api/v1/operations/listgames/) for all query parameters.
+
+---
+
+## Step 3: Launch a Game
+
+To launch a game for a player, create a session. The response includes a `game_url` that you redirect the player to.
+
+**Request:**
+
+```bash
+curl -X POST "https://api.aggregator.gg/v1/sessions" \
+  -H "Authorization: Bearer sk_live_xxx" \
+  -H "Idempotency-Key: launch-player-42-20260402-001" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "game_id": "game_abc123",
+    "player_id": "player_42",
+    "balance": 10000,
+    "currency": "EUR",
+    "country": "DE",
+    "lang": "de",
+    "return_url": "https://your-casino.com/lobby"
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "session_id": "sess_xyz789",
+  "game_url": "https://games.aggregator.gg/launch/sess_xyz789",
+  "expires_in": 20,
+  "provider_session_uid": "tl_session_abc",
+  "provider_code": "truelabs"
+}
+```
+
+**Using the SDK:**
+
+```typescript
+const session = await aggregator.sessions.create({
+  game_id: "game_abc123",
+  player_id: "player_42",
+  balance: 10000,
+  currency: "EUR",
+  country: "DE",
+  lang: "de",
+  return_url: "https://your-casino.com/lobby",
+});
+
+// Redirect the player
+res.redirect(session.game_url);
+```
+
+If you need stable retries across your own queue or worker boundary, pass the
+same key explicitly:
+
+```typescript
+const session = await aggregator.sessions.create(
+  {
+    game_id: "game_abc123",
+    player_id: "player_42",
+    balance: 10000,
+    currency: "EUR",
+    country: "DE",
+    lang: "de",
+    return_url: "https://your-casino.com/lobby",
+  },
+  { idempotencyKey: "launch-player-42-20260402-001" },
+);
+```
+
+**Important details:**
+
+- `balance` is in minor currency units (cents). 10000 = 100.00 EUR.
+- `country` determines jurisdiction rules. Games blocked in the player's country return a `403`.
+- `return_url` is where the player lands when they close the game. If omitted, the game closes to a blank page.
+- Sessions expire after `expires_in` seconds. Create a new session if the player returns after expiry.
+
+You can also launch demo sessions (no player credentials required):
+
+```typescript
+const demo = await aggregator.sessions.createDemo({
+  game_id: "game_abc123",
+});
+// demo.game_url opens the game in free-play mode
+```
+
+---
+
+## Step 4: Handle Wallet Callbacks
+
+When a player places a bet or receives a win, The Aggregator sends an HTTPS callback to the URL you configure in your operator cabinet under **Settings > Callback URL**.
+
+### Callback format
+
+The Aggregator sends a `POST` request with a JSON body:
+
+```json
+{
+  "transaction_id": "tx_bet_001",
+  "type": "bet",
+  "session_id": "sess_xyz789",
+  "player_id": "player_42",
+  "amount": 500,
+  "currency": "EUR",
+  "game_id": "game_abc123",
+  "provider_code": "truelabs",
+  "round_id": "round_abc",
+  "timestamp": "2026-03-30T12:00:00Z"
+}
+```
+
+**Transaction types:**
+
+| Type | Description | Your action |
+|------|-------------|-------------|
+| `bet` | Player placed a bet | Deduct `amount` from the player's balance |
+| `win` | Player won | Credit `amount` to the player's balance |
+| `refund` | A previous bet was reversed | Credit `amount` back to the player's balance |
+
+### Verify the signature
+
+Every callback includes an `X-SIGNATURE` header. Verify it before processing.
+
+The signature is an HMAC-SHA256 hex digest of the raw request body, signed with your callback secret.
+
+```typescript
+
+function verifySignature(
+  body: string,
+  signature: string,
+  secret: string,
+): boolean {
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(body)
+    .digest("hex");
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expected),
+  );
+}
+```
+
+> **Security**: Always use `timingSafeEqual` for signature comparison to prevent timing attacks. Reject any request with an invalid or missing signature.
+> HTTP sends `X-SIGNATURE`; Node exposes it as `req.headers["x-signature"]`.
+
+### Respond correctly
+
+Your endpoint must return a JSON response with the player's updated balance:
+
+**Success (200):**
+
+```json
+{
+  "balance": 9500
+}
+```
+
+**Error responses:**
+
+| Status | When to use |
+|--------|-------------|
+| `200` | Transaction processed successfully. Return the new balance. |
+| `402` | Insufficient funds. Only valid for `bet` transactions. The bet is not placed. |
+| `409` | Duplicate `transaction_id`. Return the same balance you returned for the original request. |
+| `500` | Internal error. The Aggregator retries the callback. |
+
+### Handle idempotency
+
+You will receive the same `transaction_id` more than once if the first request times out or fails. Your handler must:
+
+1. Check if you have already processed this `transaction_id`.
+2. If yes, return the same response you returned the first time (same balance, same status).
+3. If no, process the transaction and store the `transaction_id` with the result.
+
+```typescript
+app.post("/callbacks/wallet", async (req, res) => {
+  // 1. Verify signature
+  const sig = req.headers["x-signature"] as string;
+  if (!verifySignature(req.rawBody, sig, CALLBACK_SECRET)) {
+    return res.status(401).json({ error: "Invalid signature" });
+  }
+
+  const { transaction_id, type, player_id, amount } = req.body;
+
+  // 2. Check idempotency
+  const existing = await db.getTransaction(transaction_id);
+  if (existing) {
+    return res.json({ balance: existing.balance_after });
+  }
+
+  // 3. Process transaction
+  let newBalance: number;
+  if (type === "bet") {
+    newBalance = await db.deductBalance(player_id, amount);
+    if (newBalance < 0) {
+      return res.status(402).json({ error: "Insufficient funds" });
+    }
+  } else {
+    // win or refund
+    newBalance = await db.creditBalance(player_id, amount);
+  }
+
+  // 4. Store for idempotency
+  await db.saveTransaction(transaction_id, { balance_after: newBalance });
+
+  return res.json({ balance: newBalance });
+});
+```
+
+For full callback documentation, see the [wallet callbacks guide](/guides/wallet-callbacks/).
+
+---
+
+## Step 5: Test Your Integration
+
+You test against the real production cluster with your `sk_live_*` key. Your **welcome credit pack** subsidises the operator wallet so you can run real provider sessions without funding it. See [Testing your integration](/guides/testing-sandbox/) for the full recommended test sequence.
+
+### Testing checklist
+
+- [ ] **Game catalog** -- List games and verify filtering works
+- [ ] **Session creation** -- Create a session and confirm you receive a valid `game_url`
+- [ ] **Demo session** -- Create a demo session and verify free-play mode works (no wallet movement)
+- [ ] **Bet callback** -- Verify your endpoint deducts the correct amount and returns the updated balance
+- [ ] **Win callback** -- Verify your endpoint credits the correct amount
+- [ ] **Refund callback** -- Verify your endpoint reverses a bet correctly
+- [ ] **Insufficient funds** -- Send a bet larger than the player's balance and confirm you return `402`
+- [ ] **Idempotency** -- Send the same `transaction_id` twice and confirm you return the same response both times
+- [ ] **Signature verification** -- Send a request with a tampered signature and confirm your endpoint rejects it with `401`
+- [ ] **Timeout handling** -- Confirm your callback endpoint responds within 5 seconds under load
+- [ ] **Blocked country** -- Attempt to create a session for a blocked country and confirm you receive `403`
+
+### Viewing transactions
+
+You can inspect all your transactions through the API:
+
+```typescript
+const { transactions } = await aggregator.transactions.list({
+  page: 1,
+  per_page: 100,
+});
+```
+
+Or view them in the operator cabinet under **Transactions**.
+
+---
+
+## Step 6: Go Live
+
+Once you have exercised the full callback path against welcome credits and the testing checklist is green, you are ready to open customer traffic.
+
+### Production checklist
+
+**API and authentication:**
+- [ ] Your `sk_live_*` API key and callback secret are stored in a secrets manager, not in code
+- [ ] You have a separate rotated key for CI/integration runs (do not reuse the production key)
+- [ ] Your production callback URL is configured in the operator cabinet
+
+**Callback endpoint:**
+- [ ] Endpoint is publicly accessible over HTTPS (TLS 1.2+)
+- [ ] Signature verification is enabled and tested
+- [ ] Idempotency handling is implemented and tested
+- [ ] Endpoint responds within 5 seconds under expected load
+- [ ] Error responses follow the documented status codes (200, 402, 409, 500)
+
+**Reliability:**
+- [ ] Callback endpoint has monitoring and alerting configured
+- [ ] You have a process for investigating and resolving failed callbacks
+- [ ] Your database transactions for balance updates are atomic (no partial updates)
+- [ ] You log every callback with `transaction_id`, `type`, and `amount` for reconciliation
+
+**Compliance:**
+- [ ] You respect `blocked_countries` and do not launch games for restricted jurisdictions
+- [ ] Player balances are displayed in the correct currency and denomination
+- [ ] You have completed KYB verification and your operator account is approved for production
+
+**Final verification:**
+- [ ] Run one real session with a small balance to confirm the full flow works in production
+- [ ] Verify callback delivery by checking the transaction in both your system and the operator cabinet
+
+---
+
+## Further Reading
+
+- [Full API Reference](/api/v1/operations/listgames/) -- Complete endpoint documentation with request/response schemas
+- [Wallet Callback Guide](/guides/wallet-callbacks/) -- Detailed callback specification, retry behavior, and edge cases
+- TypeScript SDK — distributed via your account contact
+
+---
+
+<!-- guides/code-samples -->
+
+The five operations every operator integration needs, in the three languages we ship hand-curated samples for. **TypeScript**, **PHP**, and **Python** — chosen because they cover ~85% of incumbent B2B casino backend stacks. For Java, Go, C#, Ruby, Kotlin, Rust — generate clients from our [OpenAPI spec](https://github.com/aggregator-gg/docs/blob/main/openapi/aggregator.yaml) with [`openapi-generator-cli`](https://openapi-generator.tech/).
+
+> 
+All samples assume environment variables `AGGREGATOR_API_KEY` (your `sk_live_*` key) and `AGGREGATOR_CALLBACK_SECRET` (HMAC secret). Never hard-code these in source.
+
+## 1. List games (first request)
+
+The minimal "is auth working" call. List a single page of games for your enabled providers.
+
+**TypeScript:**
+
+```ts
+const res = await fetch(
+  "https://api.aggregator.gg/v1/games?per_page=10",
+  {
+    headers: { Authorization: `Bearer ${process.env.AGGREGATOR_API_KEY}` },
+  },
+);
+
+if (!res.ok) {
+  throw new Error(`list games failed: ${res.status} ${await res.text()}`);
+}
+
+const { games, total } = await res.json();
+console.log(`Got ${games.length} of ${total} games`);
+```
+
+**PHP:**
+
+```php
+<?php
+
+$ch = curl_init('https://api.aggregator.gg/v1/games?per_page=10');
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer ' . getenv('AGGREGATOR_API_KEY'),
+    ],
+]);
+$body = curl_exec($ch);
+$status = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+curl_close($ch);
+
+if ($status < 200 || $status >= 300) {
+    throw new RuntimeException("list games failed: $status $body");
+}
+
+$payload = json_decode($body, true);
+printf("Got %d of %d games\n", count($payload['games']), $payload['total']);
+```
+
+**Python:**
+
+```python
+import os
+import httpx
+
+resp = httpx.get(
+    "https://api.aggregator.gg/v1/games",
+    params={"per_page": 10},
+    headers={"Authorization": f"Bearer {os.environ['AGGREGATOR_API_KEY']}"},
+    timeout=10.0,
+)
+resp.raise_for_status()
+payload = resp.json()
+print(f"Got {len(payload['games'])} of {payload['total']} games")
+```
+
+---
+
+## 2. Create a session
+
+Real-money game launch. Requires an `Idempotency-Key` header — see [Idempotency](/guides/idempotency/) for the why.
+
+**TypeScript:**
+
+```ts
+
+const idempotencyKey = `launch-${playerId}-${spinId}`;  // stable for retries
+
+const res = await fetch("https://api.aggregator.gg/v1/sessions", {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${process.env.AGGREGATOR_API_KEY}`,
+    "Idempotency-Key": idempotencyKey,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    game_id: "d4f7a2b1-3c8e-4f5a-9b6d-1e2f3a4b5c6d",
+    player_id: playerId,
+    balance: 10_000, // minor units — 100.00 EUR
+    currency: "EUR",
+    country: "DE",
+    lang: "de",
+    return_url: "https://your-casino.example/lobby",
+  }),
+});
+
+if (res.status === 402) {
+  throw new Error("operator wallet insufficient — top up credits");
+}
+if (!res.ok) {
+  throw new Error(`create session failed: ${res.status}`);
+}
+
+const { session_id, game_url, expires_in } = await res.json();
+// Redirect the player to game_url within `expires_in` seconds.
+```
+
+**PHP:**
+
+```php
+<?php
+
+$idempotencyKey = "launch-{$playerId}-{$spinId}";
+
+$ch = curl_init('https://api.aggregator.gg/v1/sessions');
+curl_setopt_array($ch, [
+    CURLOPT_POST => true,
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer ' . getenv('AGGREGATOR_API_KEY'),
+        'Idempotency-Key: ' . $idempotencyKey,
+        'Content-Type: application/json',
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'game_id' => 'd4f7a2b1-3c8e-4f5a-9b6d-1e2f3a4b5c6d',
+        'player_id' => $playerId,
+        'balance' => 10000,            // minor units — 100.00 EUR
+        'currency' => 'EUR',
+        'country' => 'DE',
+        'lang' => 'de',
+        'return_url' => 'https://your-casino.example/lobby',
+    ]),
+]);
+$body = curl_exec($ch);
+$status = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+curl_close($ch);
+
+if ($status === 402) {
+    throw new RuntimeException('operator wallet insufficient — top up credits');
+}
+if ($status < 200 || $status >= 300) {
+    throw new RuntimeException("create session failed: $status $body");
+}
+
+$session = json_decode($body, true);
+// Redirect the player to $session['game_url'] within $session['expires_in'] seconds.
+```
+
+**Python:**
+
+```python
+import os
+import httpx
+
+idempotency_key = f"launch-{player_id}-{spin_id}"
+
+resp = httpx.post(
+    "https://api.aggregator.gg/v1/sessions",
+    headers={
+        "Authorization": f"Bearer {os.environ['AGGREGATOR_API_KEY']}",
+        "Idempotency-Key": idempotency_key,
+    },
+    json={
+        "game_id": "d4f7a2b1-3c8e-4f5a-9b6d-1e2f3a4b5c6d",
+        "player_id": player_id,
+        "balance": 10_000,           # minor units — 100.00 EUR
+        "currency": "EUR",
+        "country": "DE",
+        "lang": "de",
+        "return_url": "https://your-casino.example/lobby",
+    },
+    timeout=10.0,
+)
+
+if resp.status_code == 402:
+    raise RuntimeError("operator wallet insufficient — top up credits")
+resp.raise_for_status()
+
+session = resp.json()
+# Redirect player to session["game_url"] within session["expires_in"] seconds.
+```
+
+---
+
+## 3. Verify a callback signature
+
+The single highest-leverage snippet on this site. Copy verbatim. See [Signature verification](/guides/signature-verification/) for the full guide including replay-window checks.
+
+**TypeScript:**
+
+```ts
+
+export function verifyAggregatorSignature(
+  rawBody: Buffer,
+  signatureHeader: string,
+  timestampHeader: string,
+): boolean {
+  const ts = parseInt(timestampHeader, 10);
+  if (!Number.isFinite(ts)) return false;
+  if (Math.abs(Date.now() / 1000 - ts) > 900) return false;
+
+  const expected = crypto
+    .createHmac("sha256", process.env.AGGREGATOR_CALLBACK_SECRET!)
+    .update(`${ts}.${rawBody.toString("utf8")}`)
+    .digest("hex");
+
+  const provided = signatureHeader.replace(/^sha256=/, "");
+  if (expected.length !== provided.length) return false;
+
+  return crypto.timingSafeEqual(
+    Buffer.from(expected, "hex"),
+    Buffer.from(provided, "hex"),
+  );
+}
+```
+
+**PHP:**
+
+```php
+<?php
+
+function verifyAggregatorSignature(
+    string $rawBody,
+    string $signatureHeader,
+    string $timestampHeader
+): bool {
+    if (!ctype_digit($timestampHeader)) return false;
+    $ts = (int) $timestampHeader;
+    if (abs(time() - $ts) > 900) return false;
+
+    $expected = hash_hmac(
+        'sha256',
+        $ts . '.' . $rawBody,
+        getenv('AGGREGATOR_CALLBACK_SECRET'),
+    );
+    $provided = preg_replace('/^sha256=/', '', $signatureHeader);
+    return hash_equals($expected, $provided);
+}
+```
+
+**Python:**
+
+```python
+import hmac
+import hashlib
+import os
+import time
+
+def verify_aggregator_signature(
+    raw_body: bytes,
+    signature_header: str,
+    timestamp_header: str,
+) -> bool:
+    try:
+        ts = int(timestamp_header)
+    except ValueError:
+        return False
+    if abs(time.time() - ts) > 900:
+        return False
+
+    secret = os.environ["AGGREGATOR_CALLBACK_SECRET"].encode()
+    message = f"{ts}.".encode() + raw_body
+    expected = hmac.new(secret, message, hashlib.sha256).hexdigest()
+    provided = signature_header.removeprefix("sha256=")
+    return hmac.compare_digest(expected, provided)
+```
+
+> 
+**Constant-time compare matters.** All three samples use `timingSafeEqual` / `hash_equals` / `hmac.compare_digest`. A plain `==` is a timing-attack vector.
+
+---
+
+## 4. Handle a callback (full endpoint)
+
+Receive a bet/win callback, verify signature, debit/credit your wallet, respond with the new balance. Pseudo-wallet helpers (`debit`, `credit`) are placeholders for your real ledger code.
+
+**TypeScript:**
+
+```ts
+// Express
+
+const app = express();
+
+app.post(
+  "/aggregator/callback",
+  express.raw({ type: "application/json" }),  // raw body for HMAC
+  async (req, res) => {
+    const rawBody = req.body as Buffer;
+    const signature = req.header("X-Aggregator-Signature") ?? "";
+    const timestamp = req.header("X-Aggregator-Timestamp") ?? "";
+
+    if (!verifyAggregatorSignature(rawBody, signature, timestamp)) {
+      return res.status(401).json({ error: "invalid_signature" });
+    }
+
+    const event = JSON.parse(rawBody.toString("utf8"));
+    let newBalance: number;
+    try {
+      if (event.event === "bet") {
+        newBalance = await wallet.debit(event.player_id, event.amount, event.transaction_id);
+      } else if (event.event === "win") {
+        newBalance = await wallet.credit(event.player_id, event.amount, event.transaction_id);
+      } else {
+        return res.status(400).json({ error: "unknown_event" });
+      }
+    } catch (e) {
+      if (e.code === "INSUFFICIENT_BALANCE") {
+        return res.status(402).json({ error: "insufficient_balance" });
+      }
+      throw e;
+    }
+
+    res.json({ balance: newBalance });
+  },
+);
+```
+
+**PHP:**
+
+```php
+<?php
+// Slim or vanilla PHP front controller
+
+$rawBody = file_get_contents('php://input');
+$signature = $_SERVER['HTTP_X_AGGREGATOR_SIGNATURE'] ?? '';
+$timestamp = $_SERVER['HTTP_X_AGGREGATOR_TIMESTAMP'] ?? '';
+
+if (!verifyAggregatorSignature($rawBody, $signature, $timestamp)) {
+    http_response_code(401);
+    echo json_encode(['error' => 'invalid_signature']);
+    exit;
+}
+
+$event = json_decode($rawBody, true);
+
+try {
+    if ($event['event'] === 'bet') {
+        $newBalance = $wallet->debit(
+            $event['player_id'],
+            $event['amount'],
+            $event['transaction_id'],
+        );
+    } elseif ($event['event'] === 'win') {
+        $newBalance = $wallet->credit(
+            $event['player_id'],
+            $event['amount'],
+            $event['transaction_id'],
+        );
+    } else {
+        http_response_code(400);
+        echo json_encode(['error' => 'unknown_event']);
+        exit;
+    }
+} catch (InsufficientBalanceException $e) {
+    http_response_code(402);
+    echo json_encode(['error' => 'insufficient_balance']);
+    exit;
+}
+
+header('Content-Type: application/json');
+echo json_encode(['balance' => $newBalance]);
+```
+
+**Python:**
+
+```python
+# FastAPI
+from fastapi import FastAPI, Request, HTTPException
+
+app = FastAPI()
+
+@app.post("/aggregator/callback")
+async def aggregator_callback(request: Request):
+    raw_body = await request.body()
+    signature = request.headers.get("X-Aggregator-Signature", "")
+    timestamp = request.headers.get("X-Aggregator-Timestamp", "")
+
+    if not verify_aggregator_signature(raw_body, signature, timestamp):
+        raise HTTPException(401, "invalid_signature")
+
+    event = await request.json()
+    try:
+        if event["event"] == "bet":
+            new_balance = await wallet.debit(
+                event["player_id"], event["amount"], event["transaction_id"]
+            )
+        elif event["event"] == "win":
+            new_balance = await wallet.credit(
+                event["player_id"], event["amount"], event["transaction_id"]
+            )
+        else:
+            raise HTTPException(400, "unknown_event")
+    except InsufficientBalanceError:
+        raise HTTPException(402, "insufficient_balance")
+
+    return {"balance": new_balance}
+```
+
+---
+
+## 5. Structured error handling
+
+Every API error follows the `{ error: { code, message, request_id, details } }` envelope. See [Error codes](/resources/error-codes/) for the full code list.
+
+**TypeScript:**
+
+```ts
+async function callAggregator(path: string, init?: RequestInit) {
+  const res = await fetch(`https://api.aggregator.gg/v1${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${process.env.AGGREGATOR_API_KEY}`,
+      ...init?.headers,
+    },
+  });
+
+  if (res.ok) return res.json();
+
+  let payload;
+  try {
+    payload = await res.json();
+  } catch {
+    throw new AggregatorError(res.status, "E0000", "non_json_response", null);
+  }
+
+  throw new AggregatorError(
+    res.status,
+    payload.error?.code,
+    payload.error?.message,
+    payload.error?.request_id,
+  );
+}
+
+class AggregatorError extends Error {
+  constructor(
+    public httpStatus: number,
+    public code: string,
+    message: string,
+    public requestId: string | null,
+  ) {
+    super(`[${code}] ${message} (request_id=${requestId})`);
+  }
+}
+
+// Use:
+try {
+  await callAggregator("/sessions", { method: "POST", body: ... });
+} catch (e) {
+  if (e instanceof AggregatorError && e.code === "E0301") {
+    // Player self-excluded — show a soft message, not "API error"
+  } else {
+    throw e;
+  }
+}
+```
+
+**PHP:**
+
+```php
+<?php
+
+class AggregatorException extends RuntimeException {
+    public function __construct(
+        public readonly int $httpStatus,
+        public readonly string $code,
+        string $message,
+        public readonly ?string $requestId,
+    ) {
+        parent::__construct("[$code] $message (request_id=$requestId)");
+    }
+}
+
+function callAggregator(string $path, array $opts = []): array {
+    $ch = curl_init('https://api.aggregator.gg/v1' . $path);
+    $headers = [
+        'Authorization: Bearer ' . getenv('AGGREGATOR_API_KEY'),
+        ...($opts['headers'] ?? []),
+    ];
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => $headers,
+        ...($opts['curl'] ?? []),
+    ]);
+    $body = curl_exec($ch);
+    $status = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    curl_close($ch);
+
+    if ($status >= 200 && $status < 300) {
+        return json_decode($body, true);
+    }
+
+    $payload = json_decode($body, true) ?: [];
+    $err = $payload['error'] ?? [];
+    throw new AggregatorException(
+        $status,
+        $err['code'] ?? 'E0000',
+        $err['message'] ?? $body,
+        $err['request_id'] ?? null,
+    );
+}
+
+// Use:
+try {
+    callAggregator('/sessions', ['curl' => [CURLOPT_POST => true, ...]]);
+} catch (AggregatorException $e) {
+    if ($e->code === 'E0301') {
+        // Player self-excluded
+    } else {
+        throw $e;
+    }
+}
+```
+
+**Python:**
+
+```python
+import os
+import httpx
+
+class AggregatorError(Exception):
+    def __init__(self, http_status: int, code: str, message: str, request_id: str | None):
+        self.http_status = http_status
+        self.code = code
+        self.message = message
+        self.request_id = request_id
+        super().__init__(f"[{code}] {message} (request_id={request_id})")
+
+def call_aggregator(path: str, method: str = "GET", **kwargs) -> dict:
+    headers = {
+        "Authorization": f"Bearer {os.environ['AGGREGATOR_API_KEY']}",
+        **kwargs.pop("headers", {}),
+    }
+    resp = httpx.request(
+        method,
+        f"https://api.aggregator.gg/v1{path}",
+        headers=headers,
+        timeout=10.0,
+        **kwargs,
+    )
+
+    if resp.is_success:
+        return resp.json()
+
+    try:
+        payload = resp.json()
+    except ValueError:
+        raise AggregatorError(resp.status_code, "E0000", "non_json_response", None)
+
+    err = payload.get("error") or {}
+    raise AggregatorError(
+        resp.status_code,
+        err.get("code", "E0000"),
+        err.get("message", resp.text),
+        err.get("request_id"),
+    )
+
+# Use:
+try:
+    call_aggregator("/sessions", method="POST", json={...})
+except AggregatorError as e:
+    if e.code == "E0301":
+        # Player self-excluded
+        pass
+    else:
+        raise
+```
+
+---
+
+## Other languages
+
+For Java, Go, C#, Ruby, Kotlin, Rust — generate a client from the spec:
+
+```sh
+npx @openapitools/openapi-generator-cli generate \
+  -i https://raw.githubusercontent.com/aggregator-gg/docs/main/openapi/aggregator.yaml \
+  -g python  \  # or java, go, csharp, ruby, kotlin, rust, ...
+  -o ./aggregator-client
+```
+
+The generator supports 30+ languages. Output is a typed client with request/response models matching the spec exactly.
+
+---
+
+<!-- guides/wallet-callbacks -->
+
+## How Callbacks Work
+
+1. A player opens a game through your platform via The Aggregator.
+2. The game provider sends a callback to The Aggregator at `POST /callbacks/{provider_code}/{action}`.
+3. The Aggregator verifies the provider's signature, records the transaction, and forwards a normalized payload to your configured `callback_url`.
+4. Your server processes the wallet event (debit or credit the player's balance) and returns a JSON response.
+
+```
+Player -> Game Provider -> The Aggregator -> Your Server
+                                               |
+                          <- response <--------+
+```
+
+The Aggregator acts as a normalizer: regardless of which game provider originates the event, you always receive the same payload shape and signing scheme.
+
+---
+
+## Forward Payload
+
+The Aggregator sends a `POST` request to your `callback_url` with the following format.
+
+### Headers
+
+| Header | Value |
+|--------|-------|
+| `Content-Type` | `application/json` |
+| `X-SIGNATURE` | HMAC-SHA256 hex digest of the raw JSON body, keyed with your `callback_secret` |
+
+### Body
+
+```json
+{
+  "action": "BET-WIN",
+  "transaction_type": "bet",
+  "transaction_id": "provider-unique-tx-id",
+  "amount": "1.50",
+  "currency": "EUR",
+  "player_id": "player-123",
+  "provider_code": "truelabs",
+  "game": "gates-of-olympus",
+  "game_id": "550e8400-e29b-41d4-a716-446655440000",
+  "round_id": "round-123",
+  "finished": false,
+  "session_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+}
+```
+
+### Field Reference
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `action` | `string` | Provider-specific action label (e.g. `"BET-WIN"`, `"BET"`, `"WIN"`). Use `transaction_type` for branching logic. |
+| `transaction_type` | `string` | One of `"bet"`, `"win"`, or `"refund"`. This is the field you use to decide how to update the player's balance. |
+| `transaction_id` | `string` | Provider-unique identifier for this transaction. Use as your idempotency key. |
+| `amount` | `string` | Decimal string representing the transaction amount (e.g. `"1.50"`). Always positive. |
+| `currency` | `string` | ISO 4217 currency code (e.g. `"EUR"`, `"USD"`). |
+| `player_id` | `string` | The player identifier you provided when launching the game session. |
+| `provider_code` | `string` | Identifies the game provider (e.g. `"truelabs"`, `"bgaming"`). |
+| `game` | `string` | Game slug or name from the provider. |
+| `game_id` | `string` | UUID of the game in The Aggregator's catalog. |
+| `round_id` | `string` | Groups related transactions into a single game round. |
+| `finished` | `boolean` | `true` on the final callback of a round. |
+| `session_id` | `string` | UUID of the game session in The Aggregator. |
+
+---
+
+## Signature Verification
+
+Every forwarded callback is signed with your `callback_secret` using HMAC-SHA256. You must verify the signature before processing any callback.
+
+### Algorithm
+
+1. Read the raw request body as bytes. Do not parse or re-serialize it first.
+2. Compute the HMAC-SHA256 of those bytes using your `callback_secret` as the key.
+3. Compare the resulting hex digest with the value in the `X-SIGNATURE` header using a **constant-time comparison** function.
+
+```
+expected = HMAC-SHA256(raw_body_bytes, callback_secret)
+valid    = constant_time_compare(expected, request.headers["X-SIGNATURE"])
+```
+
+**Important**: The body is serialized with compact JSON (no spaces after separators). If you re-serialize the parsed JSON to verify the signature, the result will not match. Always use the raw bytes.
+
+---
+
+## Expected Response
+
+Your server must return **HTTP 200** with a JSON body containing the player's updated balance:
+
+```json
+{
+  "balance": 9850,
+  "currency": "EUR",
+  "player_id": "player-123"
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `balance` | `number` | Player's balance **after** applying the transaction, in minor units (cents). |
+| `currency` | `string` | ISO 4217 currency code. Must match the request currency. |
+| `player_id` | `string` | Echo back the `player_id` from the request. |
+
+If your endpoint returns a non-2xx status or non-JSON body, The Aggregator treats it as a failure and triggers the retry and circuit breaker mechanisms described below.
+
+---
+
+## Transaction Types
+
+### bet
+
+The player places a bet. **Debit** the player's balance by `amount`.
+
+```
+player.balance -= parse_decimal(callback.amount)
+```
+
+### win
+
+The player wins. **Credit** the player's balance by `amount`.
+
+```
+player.balance += parse_decimal(callback.amount)
+```
+
+### refund
+
+The round was cancelled by the provider. **Reverse the original bet** -- credit the player's balance by `amount`.
+
+```
+player.balance += parse_decimal(callback.amount)
+```
+
+A refund always refers to a previously processed `bet` with the same `round_id`. If you have not processed the original bet, you can safely ignore the refund.
+
+---
+
+## Round Lifecycle
+
+A game round follows a predictable sequence:
+
+```
+bet (finished=false)
+  -> win (finished=false)     # optional, may repeat
+  -> win (finished=true)      # final callback closes the round
+```
+
+- A round **starts** with a `bet` callback where `finished=false`.
+- Zero or more `win` callbacks follow within the same `round_id`.
+- The **final** callback in a round has `finished=true`.
+- If a round is **cancelled**, a `refund` callback reverses the original bet.
+
+You can use `round_id` + `finished` to track round state on your side, but it is not required. Processing each callback individually by `transaction_id` is sufficient.
+
+---
+
+## Idempotency
+
+The Aggregator enforces idempotency on its side using a body hash and signature. If a duplicate callback arrives from the provider, The Aggregator replays the cached response from your server instead of forwarding the request again.
+
+**You must also implement idempotency on your side.** Use `transaction_id` as the idempotency key:
+
+1. Before processing a callback, check whether you have already processed a transaction with this `transaction_id`.
+2. If yes, return the same response you returned the first time. Do not debit or credit the player again.
+3. If no, process the transaction and store the result keyed by `transaction_id`.
+
+This protects against network-level retries and edge cases where The Aggregator's deduplication does not cover (e.g., retry queue deliveries).
+
+---
+
+## Retry Behavior
+
+If your endpoint returns an HTTP 5xx status or is unreachable (connection error, timeout), The Aggregator enqueues the callback for retry.
+
+### Retry Schedule
+
+| Attempt | Delay |
+|---------|-------|
+| 1 | 5 seconds |
+| 2 | 30 seconds |
+| 3 | 2 minutes |
+| 4 | 10 minutes |
+| 5 | 1 hour |
+
+After 5 failed attempts, the callback moves to a **dead-letter queue** and is no longer retried. Contact support to replay dead-lettered callbacks.
+
+### Timeouts
+
+- **Forward timeout**: 5 seconds. Your server must respond within 5 seconds on the initial callback.
+- **Retry timeout**: 10 seconds per retry attempt.
+
+If your processing takes longer than 5 seconds, return HTTP 200 immediately with the current balance and process asynchronously. Alternatively, optimize your handler to respond within the timeout.
+
+---
+
+## Circuit Breaker
+
+The Aggregator uses a per-operator circuit breaker to protect both your infrastructure and the platform from cascading failures.
+
+### States
+
+| State | Behavior |
+|-------|----------|
+| **Closed** | Normal operation. Failures are counted. |
+| **Open** | All callbacks are rejected immediately and queued for retry. No requests reach your server. |
+| **Half-Open** | A single probe request is allowed through. If it succeeds, the circuit closes. If it fails, the circuit reopens. |
+
+### Thresholds
+
+| Parameter | Default | Env Override |
+|-----------|---------|--------------|
+| Failure threshold | 5 consecutive 5xx responses | `CB_FAILURE_THRESHOLD` |
+| Recovery timeout | 30 seconds | `CB_RECOVERY_TIMEOUT_S` |
+| Max concurrent forwards | 10 per operator | `CB_BULKHEAD_MAX_CONCURRENT` |
+
+When the circuit is open, callbacks accumulate in the retry queue and are delivered once the circuit recovers. You do not lose transactions.
+
+---
+
+## Configuration
+
+You configure your `callback_url` and `callback_secret` through the operator cabinet setup wizard or by contacting support.
+
+- **callback_url**: The HTTPS endpoint on your server that receives wallet callbacks. Must be publicly reachable. Internal/private IP addresses are blocked (SSRF protection).
+- **callback_secret**: A shared secret used to sign forwarded payloads. Encrypted at rest with AES-256-GCM. Treat it like a password -- never log it, never commit it to version control.
+
+---
+
+## Code Examples
+
+### Node.js (Express)
+
+```javascript
+const express = require("express");
+const crypto = require("crypto");
+
+const app = express();
+
+// IMPORTANT: Use raw body for signature verification
+app.use("/callbacks", express.raw({ type: "application/json" }));
+
+const CALLBACK_SECRET = process.env.CALLBACK_SECRET;
+
+app.post("/callbacks", (req, res) => {
+  // 1. Verify signature
+  const signature = req.headers["x-signature"];
+  if (!signature) {
+    return res.status(401).json({ error: "Missing signature" });
+  }
+
+  const expected = crypto
+    .createHmac("sha256", CALLBACK_SECRET)
+    .update(req.body) // req.body is a Buffer when using express.raw()
+    .digest("hex");
+
+  if (!crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))) {
+    return res.status(401).json({ error: "Invalid signature" });
+  }
+
+  // 2. Parse the callback
+  const callback = JSON.parse(req.body.toString());
+
+  // 3. Idempotency check
+  const existing = getProcessedTransaction(callback.transaction_id);
+  if (existing) {
+    return res.json(existing.response);
+  }
+
+  // 4. Process by transaction type
+  let balance;
+  switch (callback.transaction_type) {
+    case "bet":
+      balance = debitPlayer(callback.player_id, callback.amount, callback.currency);
+      break;
+    case "win":
+    case "refund":
+      balance = creditPlayer(callback.player_id, callback.amount, callback.currency);
+      break;
+    default:
+      return res.status(400).json({ error: `Unknown type: ${callback.transaction_type}` });
+  }
+
+  // 5. Build response
+  const response = {
+    balance: balance,       // integer, minor units (cents)
+    currency: callback.currency,
+    player_id: callback.player_id,
+  };
+
+  // 6. Store for idempotency
+  storeProcessedTransaction(callback.transaction_id, { response });
+
+  return res.json(response);
+});
+
+app.listen(3000, () => console.log("Callback server listening on :3000"));
+```
+
+### Python (Flask)
+
+```python
+import hashlib
+import hmac
+import json
+import os
+
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+CALLBACK_SECRET = os.environ["CALLBACK_SECRET"]
+
+@app.post("/callbacks")
+def handle_callback():
+    # 1. Verify signature
+    signature = request.headers.get("X-SIGNATURE", "")
+    raw_body = request.get_data()  # raw bytes, not parsed
+
+    expected = hmac.new(
+        CALLBACK_SECRET.encode("utf-8"),
+        raw_body,
+        hashlib.sha256,
+    ).hexdigest()
+
+    if not hmac.compare_digest(expected, signature):
+        return jsonify({"error": "Invalid signature"}), 401
+
+    # 2. Parse the callback
+    callback = json.loads(raw_body)
+
+    # 3. Idempotency check
+    existing = get_processed_transaction(callback["transaction_id"])
+    if existing:
+        return jsonify(existing["response"])
+
+    # 4. Process by transaction type
+    tx_type = callback["transaction_type"]
+    amount = callback["amount"]
+    player_id = callback["player_id"]
+    currency = callback["currency"]
+
+    if tx_type == "bet":
+        balance = debit_player(player_id, amount, currency)
+    elif tx_type in ("win", "refund"):
+        balance = credit_player(player_id, amount, currency)
+    else:
+        return jsonify({"error": f"Unknown type: {tx_type}"}), 400
+
+    # 5. Build response
+    response = {
+        "balance": balance,       # integer, minor units (cents)
+        "currency": currency,
+        "player_id": player_id,
+    }
+
+    # 6. Store for idempotency
+    store_processed_transaction(callback["transaction_id"], {"response": response})
+
+    return jsonify(response)
+```
+
+---
+
+## Troubleshooting
+
+### Signature Mismatch (401)
+
+**Symptom**: Your signature verification fails on every callback.
+
+**Common causes**:
+
+1. **Re-serialized body**. You parsed the JSON and then re-serialized it before computing the HMAC. The Aggregator uses compact JSON (`json.dumps(data, separators=(",", ":"))`) with no whitespace. Always verify against the raw request bytes.
+2. **Wrong secret**. You are using the API key instead of the `callback_secret`. These are different values.
+3. **Encoding mismatch**. Your HMAC key must be the `callback_secret` string encoded as UTF-8 bytes. The body is raw bytes as received over the wire.
+4. **Middleware altering the body**. A proxy, WAF, or framework middleware modified the request body before your handler received it. Ensure you read the raw, unmodified body.
+
+**Debug steps**:
+
+```bash
+# Manually verify a captured callback
+echo -n '{"action":"BET","transaction_type":"bet",...}' | \
+  openssl dgst -sha256 -hmac "your_callback_secret"
+```
+
+Compare the output with the `X-SIGNATURE` header value.
+
+### Timeout (5xx or no response)
+
+**Symptom**: The Aggregator logs show `Failed to reach operator` or your callbacks are being retried.
+
+**Common causes**:
+
+1. **Slow database queries**. Your handler takes longer than 5 seconds to respond. Optimize your queries or return early and process asynchronously.
+2. **Firewall blocking inbound requests**. The Aggregator's IP addresses must be allowed through your firewall. Contact support for the current IP list.
+3. **DNS resolution failure**. Your `callback_url` hostname is not resolvable from The Aggregator's network.
+
+### Wrong Response Format
+
+**Symptom**: The Aggregator treats your response as a failure even though you return HTTP 200.
+
+**Common causes**:
+
+1. **Non-JSON response body**. Your server returns HTML (e.g., a framework error page) instead of JSON. Ensure your endpoint always returns `Content-Type: application/json`.
+2. **Missing `balance` field**. The response must include `balance` as an integer in minor units (cents). If you return the balance as a decimal string or omit it, the round may not complete correctly.
+
+### Duplicate Callbacks
+
+**Symptom**: You receive the same `transaction_id` more than once.
+
+This is expected behavior during retries. Implement idempotency using `transaction_id` as described in the Idempotency section. Return the same response you returned the first time -- do not process the transaction again.
+
+### Circuit Breaker Tripped
+
+**Symptom**: Callbacks stop arriving for a period, then resume with a burst of retries.
+
+Your endpoint returned 5 or more consecutive 5xx errors, which tripped the circuit breaker. After a 30-second cooldown, The Aggregator sends a single probe request. If it succeeds, the circuit closes and queued callbacks are delivered.
+
+**Action**: Check your server logs for the root cause of the 5xx errors. Fix the underlying issue and the circuit will recover automatically.
+
+---
+
+## Go-Live Checklist
+
+Complete every item before switching from test mode to live traffic.
+
+### Endpoint
+
+- [ ] Your `callback_url` is a publicly reachable HTTPS endpoint (not HTTP, not a private IP).
+- [ ] Your endpoint responds within 5 seconds under normal load.
+- [ ] Your endpoint returns HTTP 200 with a valid JSON body for all transaction types (`bet`, `win`, `refund`).
+
+### Security
+
+- [ ] You verify the `X-SIGNATURE` header on every request using HMAC-SHA256 with constant-time comparison.
+- [ ] You reject requests with a missing or invalid signature.
+- [ ] Your `callback_secret` is stored securely and not logged or exposed in error messages.
+
+### Idempotency
+
+- [ ] You store processed `transaction_id` values and return cached responses on duplicates.
+- [ ] You do not debit or credit the player balance more than once for the same `transaction_id`.
+
+### Balance Handling
+
+- [ ] `bet` callbacks debit the player balance.
+- [ ] `win` callbacks credit the player balance.
+- [ ] `refund` callbacks credit the player balance (reversing a previous bet).
+- [ ] The `balance` in your response is an integer in minor units (cents).
+- [ ] You handle insufficient balance gracefully for `bet` callbacks (return an appropriate error).
+
+### Error Handling
+
+- [ ] Your endpoint always returns JSON, even on errors (no HTML error pages).
+- [ ] You return 4xx for client errors (bad request, insufficient funds) and 5xx only for genuine server failures.
+- [ ] You have alerting on 5xx responses to avoid triggering the circuit breaker in production.
+
+### Testing
+
+- [ ] You have tested the full round lifecycle: `bet` -> `win` (with `finished=true`).
+- [ ] You have tested `refund` handling.
+- [ ] You have tested duplicate `transaction_id` handling (idempotency).
+- [ ] You have tested signature verification with a known body + secret pair.
+- [ ] You have tested your endpoint under the 5-second timeout constraint.
+
+---
+
+<!-- guides/signature-verification -->
+
+Every wallet callback delivered by The Aggregator includes an HMAC-SHA256 signature in the `X-Aggregator-Signature` header. **You must verify the signature before debiting or crediting any player wallet.** Skipping verification is the #1 fraud vector in B2B gaming.
+
+> 
+Copy these snippets verbatim into your integration. The HMAC verification step protects real money. A bug here means an attacker who learns your operator's IP or a single legit callback shape can mint arbitrary credits.
+
+## What you receive
+
+```http
+POST /your/callback-url HTTP/1.1
+Host: your-server.example.com
+Content-Type: application/json
+X-Aggregator-Signature: sha256=8b1a9953c4611296a827abf8c47804d7e8c8e8c8e8c8e8c8e8c8e8c8e8c8e8c8
+X-Aggregator-Timestamp: 1716748800
+
+{"event":"bet","session_id":"...","amount":"1.50","currency":"EUR",...}
+```
+
+## What you compute
+
+1. Take the **raw request body bytes** (do not re-serialise the JSON — re-serialisation changes whitespace)
+2. Concatenate: `f"{timestamp}.{raw_body}"`
+3. HMAC-SHA256 with your operator's `callback_secret` (set in the cabinet)
+4. Hex-encode the digest
+5. Constant-time compare with the value after `sha256=` in the header
+
+## Snippets
+
+**TypeScript:**
+
+```ts
+
+const SECRET = process.env.AGGREGATOR_CALLBACK_SECRET!;
+
+export function verifyAggregatorSignature(
+  rawBody: Buffer,
+  signatureHeader: string,
+  timestampHeader: string,
+): boolean {
+  // Reject callbacks older than 15 minutes (replay protection)
+  const ts = parseInt(timestampHeader, 10);
+  if (!Number.isFinite(ts)) return false;
+  const skewSeconds = Math.abs(Date.now() / 1000 - ts);
+  if (skewSeconds > 900) return false;
+
+  const expected = crypto
+    .createHmac("sha256", SECRET)
+    .update(`${ts}.${rawBody.toString("utf8")}`)
+    .digest("hex");
+
+  const provided = signatureHeader.replace(/^sha256=/, "");
+  if (expected.length !== provided.length) return false;
+
+  return crypto.timingSafeEqual(
+    Buffer.from(expected, "hex"),
+    Buffer.from(provided, "hex"),
+  );
+}
+```
+
+**PHP:**
+
+```php
+<?php
+
+function verifyAggregatorSignature(
+    string $rawBody,
+    string $signatureHeader,
+    string $timestampHeader
+): bool {
+    $secret = getenv('AGGREGATOR_CALLBACK_SECRET');
+    if ($secret === false) {
+        throw new RuntimeException('AGGREGATOR_CALLBACK_SECRET is not set');
+    }
+
+    // Reject callbacks older than 15 minutes (replay protection)
+    if (!ctype_digit($timestampHeader)) {
+        return false;
+    }
+    $ts = (int) $timestampHeader;
+    if (abs(time() - $ts) > 900) {
+        return false;
+    }
+
+    $expected = hash_hmac('sha256', $ts . '.' . $rawBody, $secret);
+    $provided = preg_replace('/^sha256=/', '', $signatureHeader);
+
+    return hash_equals($expected, $provided);
+}
+```
+
+**Python:**
+
+```python
+import hmac
+import hashlib
+import os
+import time
+
+def verify_aggregator_signature(
+    raw_body: bytes,
+    signature_header: str,
+    timestamp_header: str,
+) -> bool:
+    secret = os.environ["AGGREGATOR_CALLBACK_SECRET"].encode()
+
+    # Reject callbacks older than 15 minutes (replay protection)
+    try:
+        ts = int(timestamp_header)
+    except ValueError:
+        return False
+    if abs(time.time() - ts) > 900:
+        return False
+
+    message = f"{ts}.".encode() + raw_body
+    expected = hmac.new(secret, message, hashlib.sha256).hexdigest()
+    provided = signature_header.removeprefix("sha256=")
+
+    return hmac.compare_digest(expected, provided)
+```
+
+## Common mistakes
+
+| Mistake | Symptom | Fix |
+|---|---|---|
+| Re-serialising the JSON before HMAC | Signature always invalid even when key is correct | Use the **raw bytes** of the request body; do not `json.loads()` then `json.dumps()` |
+| String comparison instead of constant-time | Timing-attack vulnerability | Use `crypto.timingSafeEqual` / `hash_equals` / `hmac.compare_digest` |
+| Forgetting the timestamp window | Replay attacks succeed indefinitely | Reject if `\|now - timestamp\| > 900s` |
+| Using `sk_live_*` API key as the secret | Always fails — wrong secret | The `callback_secret` is separate; find it in cabinet → API Keys → Webhook secret |
+
+## Test your implementation
+
+Use the sandbox to verify your signature check rejects tampered payloads before going live. See [Testing in sandbox](/guides/testing-sandbox/).
+
+---
+
+<!-- guides/idempotency -->
+
+Network failures between your backend and The Aggregator are inevitable. Without idempotency, a retry after a timeout can charge the same player twice or open the same session twice. The `Idempotency-Key` header solves this.
+
+## How it works
+
+Add a unique `Idempotency-Key` header to every `POST` request that touches financial state:
+
+```http
+POST /v1/sessions HTTP/1.1
+Authorization: Bearer sk_live_...
+Idempotency-Key: 8c8e8c8e-8c8e-4c8e-8c8e-8c8e8c8e8c8e
+Content-Type: application/json
+
+{"game_id": "...", "player_id": "...", "balance": 10000, "currency": "EUR"}
+```
+
+- **First request:** processed normally, response cached
+- **Retried request with the same key (within 24 hours):** the cached response is returned, no duplicate work
+- **Different request body with the same key:** rejected with `409 Conflict` to prevent ambiguous reuse
+
+## Required on
+
+- `POST /v1/sessions`
+- `POST /v1/demo-sessions`
+- Any other `POST` documented as accepting idempotency keys
+
+Idempotency on `GET` is intrinsic (queries don't mutate); the header has no effect there.
+
+## Key format
+
+- Recommended: UUID v4
+- Maximum length: 128 ASCII characters
+- Allowed characters: letters, digits, dashes, underscores
+- **Never reuse keys across logically different operations.** One key = one logical request.
+
+## Common patterns
+
+### Per-spin
+
+```ts
+const idempotencyKey = `bet-${playerId}-${spinId}`;
+```
+
+Stable across retries of the same spin, unique across different spins.
+
+### Per-attempt UUID
+
+```ts
+const idempotencyKey = crypto.randomUUID();
+// Store this in your own state so retries reuse it
+```
+
+Generated once when you start the operation, persisted in your DB, reused on every retry until the operation succeeds.
+
+### Anti-pattern: timestamps
+
+```ts
+// ❌ DO NOT do this
+const idempotencyKey = `bet-${Date.now()}`;
+```
+
+Two retries 100ms apart get different keys. You lose the protection.
+
+## Response
+
+The Aggregator includes `Idempotent-Replay: true` in response headers when serving a cached response, so you can distinguish "this was idempotent" from "this was fresh":
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+Idempotent-Replay: true
+
+{"session_id":"...","game_url":"..."}
+```
+
+## TTL
+
+Idempotency cache lives **24 hours** from the first request. Beyond that, the key expires and a retry with the same key is treated as fresh.
+
+## When to skip
+
+If your operation is **naturally idempotent** at the database level (e.g. an UPSERT keyed on session_id you generate), you can skip the header. But for any operation that mutates a counter, balance, or ledger, use it. The cost is one UUID per request.
+
+---
+
+<!-- guides/testing-sandbox -->
+
+You test against the real production cluster with your real `sk_live_*` key. There is no separate sandbox tier. Two mechanisms make this safe:
+
+1. **Welcome credits** — every new operator gets a real-money credit pack on the house. You launch real sessions, real provider games, real callbacks. The bets are charged against your operator wallet; the welcome pack funds that wallet until depleted.
+2. **Demo sessions** — `POST /v1/demo-sessions` launches a game with no wallet involvement at all. Use it for UI previews, lobby thumbnails, or when you want to inspect a game without any money flow.
+
+See [Environments & testing](/get-started/environments/) for the operating model.
+
+> 
+Treat your welcome-pack traffic exactly like real customer traffic. The same code paths handle both. Branching on "is this a test bet?" is an anti-pattern that ages badly — the API does not give you that distinction, and code that depends on one will break the day welcome credits run out.
+
+## The recommended test sequence
+
+Run these in order during integration. Each step exercises a distinct money-path failure mode that is much cheaper to find here than in production.
+
+### 1. Catalog + session round-trip
+
+- `GET /v1/games` → confirm you receive a populated list.
+- `POST /v1/sessions` with a low-volatility game and a small balance (e.g. EUR 1.00 minor units = 100).
+- Verify the response shape matches your client's expectations — `session_id`, `game_url`, `expires_in: 20`.
+- Redirect a browser to `game_url` within the 20-second window.
+
+### 2. Callback signature verification — both happy path and tampered
+
+- Trigger a real spin in the launched game. The provider emits a `bet` callback that arrives at your `callback_url` with an `X-Aggregator-Signature` header.
+- Confirm your [signature verification](/guides/signature-verification/) returns `200` on legitimate callbacks.
+- **Tamper-test your verifier.** Take a captured legitimate callback, change one byte in the body, replay it to your endpoint. You must reject it with non-2xx. If your code accepts the tampered version, your signature check is broken and money loss is a question of when, not if.
+- **Replay-test.** Capture a legitimate callback and replay it 30 minutes later. The platform-side replay window rejects it (15-minute max age), but your own verification should also reject it — defense in depth.
+
+### 3. Idempotency
+
+- POST the same `Idempotency-Key` twice to `/v1/sessions` with the same body. Confirm the second response is identical to the first and that you see `Idempotent-Replay: true` in headers.
+- POST the same key with a *different* body. Confirm the API returns `409 Conflict`.
+- Pick a key, wait 25 hours, retry — confirm the API treats it as fresh (24h TTL).
+
+### 4. Wallet reconciliation
+
+- After ~50 spins, fetch [`GET /v1/transactions`](/api/v1/operations/listtransactions/) and reconcile against your internal wallet ledger.
+- Every `bet` and `win` transaction should match a corresponding debit/credit in your wallet.
+- Drift in this stage means your callback handler has a race condition, a missed transaction, or a duplicated one. Fix it now.
+
+### 5. Failure-mode coverage
+
+Force each of these and confirm your handler does the right thing:
+
+| Scenario | How to force | What should happen |
+|---|---|---|
+| Slow callback response | Add `sleep(15)` to your callback handler temporarily | Platform marks callback `forwarded` after timeout, retries kick in |
+| 5xx callback response | Return `500` from your handler for one spin | Platform retries with exponential backoff per [retry policy](/guides/wallet-callbacks/) |
+| Insufficient balance | Set wallet to less than the next bet amount | Provider receives the rejection, player sees an error |
+| Self-excluded player | Mark the player self-excluded in your system before launching | `POST /v1/sessions` returns `403` with `E0301 player_self_excluded` |
+| Expired session | Wait > 20 seconds before redirecting to `game_url` | Player sees provider error page; no wallet movement |
+
+### 6. Going-live readiness
+
+Once steps 1-5 are green, walk through the [Go-live checklist](/guides/go-live/) before opening customer traffic.
+
+## Tools
+
+- **Postman collection** — generated from the [OpenAPI spec](https://github.com/aggregator-gg/docs/blob/main/openapi/aggregator.yaml). Import the YAML into Postman to get every endpoint pre-configured.
+- **Demo sessions** for game previews without wallet involvement: `POST /v1/demo-sessions`.
+- **Echo callback receiver** (coming soon) — a platform-hosted callback URL that signs back to your operator account, so you can test signature verification before standing up your own callback endpoint.
+
+## What used to be here
+
+This page previously described an `sk_test_*` sandbox tier. That tier no longer exists — welcome credits + demo sessions replaced it. If you're following an old integration guide that references `sk_test_*` keys, ignore the prefix and use your `sk_live_*` key directly.
+
+---
+
+<!-- guides/go-live -->
+
+## Prerequisites
+
+- [ ] You have a working integration validated end-to-end against welcome-credit traffic — see [Testing your integration](/guides/testing-sandbox/).
+- [ ] You have read the [error code reference](/resources/error-codes/) and handle all relevant codes.
+
+---
+
+## 1. Wallet Callback Endpoint
+
+**Your callback endpoint must handle all three transaction types correctly.**
+
+- [ ] **Bet**: Debit the player balance by the requested amount. Return the updated balance.
+- [ ] **Win**: Credit the player balance by the win amount. Return the updated balance.
+- [ ] **Refund**: Reverse a previous bet. Credit the player balance by the refund amount. Return the updated balance.
+
+Verify that your endpoint returns the correct JSON response format for each type. The platform validates the response schema and will flag malformed responses.
+
+---
+
+## 2. Signature Verification
+
+**Every callback request includes an HMAC signature. You must verify it.**
+
+- [ ] Your endpoint reads the `X-SIGNATURE` header from each incoming callback.
+- [ ] You compute the HMAC-SHA256 of the raw request body using your `callback_secret`.
+- [ ] You compare the computed signature to the header value using a constant-time comparison function.
+- [ ] Requests with invalid signatures are rejected with a `401` status code.
+
+Failing to verify signatures means an attacker could send forged callbacks to credit player balances. This is a critical security control.
+
+---
+
+## 3. Idempotency
+
+**Duplicate callbacks must return the same response without processing the transaction twice.**
+
+- [ ] You store the `transaction_id` from each processed callback.
+- [ ] If a callback arrives with a `transaction_id` you have already processed, you return the original response without modifying the player balance.
+- [ ] Your idempotency check works across restarts (persisted storage, not in-memory only).
+
+The platform retries failed callbacks. Without idempotency, a retry can double-debit or double-credit a player.
+
+---
+
+## 4. Error Handling and Graceful Degradation
+
+**Your callback endpoint must not crash or return unstructured errors.**
+
+- [ ] If your database is temporarily unavailable, your endpoint returns a `503` status code (not a stack trace or HTML error page).
+- [ ] If an unknown `transaction_type` arrives, your endpoint returns a `400` with a clear error message.
+- [ ] You have a fallback for unexpected fields in the callback payload (forward-compatible parsing, not strict-match).
+- [ ] Your endpoint logs errors with enough context to debug (player ID, transaction ID, amount, timestamp).
+
+The platform interprets `5xx` responses as transient failures and will retry. It interprets `4xx` responses as permanent failures and will not retry.
+
+---
+
+## 5. Round Lifecycle
+
+**You must correctly track game rounds to ensure financial integrity.**
+
+- [ ] You store the `round_id` for every transaction.
+- [ ] When a transaction includes `"finished": true`, you mark the round as complete.
+- [ ] You do not accept new bets for a round that has been marked as finished.
+- [ ] If a win arrives for a round you have not seen (due to a missed bet callback), you handle it gracefully -- log a warning and process the win rather than rejecting it.
+
+---
+
+## 6. Player Balance Accuracy
+
+**Balance calculations must be exact. Floating-point arithmetic is not acceptable for money.**
+
+- [ ] You use integer arithmetic (cents/minor units) or a decimal type for all balance operations.
+- [ ] On **bet**: `new_balance = old_balance - bet_amount` (must not go negative).
+- [ ] On **win**: `new_balance = old_balance + win_amount`.
+- [ ] On **refund**: `new_balance = old_balance + refund_amount`.
+- [ ] The balance returned in your callback response matches the actual player balance after the operation.
+
+---
+
+## 7. Callback Response Time
+
+**Your callback endpoint must respond within 5 seconds.**
+
+- [ ] Under normal load, your endpoint responds in under 2 seconds (p95).
+- [ ] Under peak load, your endpoint responds in under 5 seconds (p99).
+- [ ] You have load tested your callback endpoint to verify these targets.
+
+If your endpoint does not respond within 5 seconds, the platform times out the request and may display an error to the player. Slow callbacks degrade the player experience.
+
+---
+
+## 8. HTTPS with Valid Certificate
+
+**Your callback URL must use HTTPS with a valid, non-expired TLS certificate.**
+
+- [ ] Your `callback_url` starts with `https://`.
+- [ ] The TLS certificate is issued by a trusted Certificate Authority (not self-signed).
+- [ ] The certificate is not expired and will not expire within the next 30 days.
+- [ ] The certificate covers the exact domain in your `callback_url` (no hostname mismatch).
+
+The platform rejects callback URLs that fail SSRF validation or use HTTP. See [E6002 `callback_url_invalid`](/resources/error-codes/).
+
+---
+
+## 9. Monitoring and Alerting
+
+**You must have monitoring in place before going live.**
+
+- [ ] You have alerts for callback endpoint downtime (health check or synthetic monitoring).
+- [ ] You have alerts for elevated error rates on your callback endpoint (5xx rate > 1%).
+- [ ] You have alerts for unusual transaction patterns (e.g., spike in refunds, unusually large bets).
+- [ ] You have a runbook or on-call rotation for responding to callback failures outside business hours.
+
+Without monitoring, you will not know when your integration is failing until players complain.
+
+---
+
+## 10. Self-Exclusion Compliance
+
+**You must respect self-exclusion signals from the platform.**
+
+- [ ] When you receive [E3004 `player_self_excluded`](/resources/error-codes/), you do not allow the player to start a new game session.
+- [ ] You do not display games or a "Play" button to self-excluded players.
+- [ ] Your system logs self-exclusion events for audit purposes.
+
+Self-exclusion is a regulatory requirement in most jurisdictions. Failure to enforce it can result in license revocation and fines.
+
+---
+
+## Verification Process
+
+After completing all items above:
+
+1. Run your full integration test suite against welcome-credit traffic — see [Testing your integration](/guides/testing-sandbox/) for the recommended sequence.
+2. Review the checklist with your engineering and compliance teams.
+3. Confirm in the cabinet that your `sk_live_*` key, callback URL, and callback secret are configured.
+4. Reconcile your wallet ledger against the [transactions API](/api/v1/operations/listtransactions/). Drift here must be fixed before customer traffic opens.
+5. Open customer traffic gradually — monitor your first 100 real-money transactions closely.
+
+---
+
+## Common Go-Live Failures
+
+These are the most frequent reasons integrations fail in the first 24 hours of production:
+
+| Failure                       | Root Cause                                               | Prevention                        |
+|-------------------------------|----------------------------------------------------------|-----------------------------------|
+| Double-credited wins          | Missing idempotency check on retried callbacks.          | Checklist item 3.                 |
+| Balance drift                 | Floating-point arithmetic on money values.               | Checklist item 6.                 |
+| Callback timeouts             | Database queries in the callback hot path without indexes.| Checklist item 7. Load test first.|
+| Forged callbacks accepted     | Signature verification not implemented.                  | Checklist item 2.                 |
+| Stuck rounds                  | `finished` flag not tracked, rounds never close.         | Checklist item 5.                 |
+| Certificate expiry            | TLS cert expired the week after go-live.                 | Checklist item 8. Set a reminder. |
+
+---
+
+## Related Documentation
+
+- [Error Code Reference](/resources/error-codes/) -- All error codes, HTTP status mappings, and handling guidance.
+- [Environments & testing](/get-started/environments/) -- Environment differences, rate limits, and how to switch.
+
+---
+
+
+# Resources
+
+<!-- resources/error-codes -->
+
+## Response Format
+
+All error responses return a JSON body with the following structure:
+
+```json
+{
+  "error": {
+    "code": "E2001",
+    "type": "game_not_found",
+    "message": "Game Not Found",
+    "details": {}
+  }
+}
+```
+
+| Field     | Type   | Description                                                        |
+|-----------|--------|--------------------------------------------------------------------|
+| `code`    | string | Stable error code (e.g., `E2001`). Use this for programmatic handling. |
+| `type`    | string | Snake-case name derived from the error enum. Useful for logging.   |
+| `message` | string | Human-readable description. May include additional context.        |
+| `details` | object | Optional. Extra context such as field names, limits, or identifiers. Present only when relevant. |
+
+---
+
+## Provider Errors (E1xxx)
+
+Errors related to game provider availability and configuration.
+
+| Code   | Type                       | HTTP | Description                                              | Operator Action                                                   |
+|--------|----------------------------|------|----------------------------------------------------------|-------------------------------------------------------------------|
+| E1001  | `provider_not_found`       | 404  | Provider does not exist in the system.                   | Verify the `provider_code` you are sending matches a registered provider. |
+| E1002  | `provider_unavailable`     | 502  | Provider is temporarily unreachable.                     | Retry after a short delay with exponential backoff.               |
+| E1003  | `provider_suspended`       | 403  | Provider has been suspended by the platform.             | Contact The Aggregator support for details.                       |
+| E1004  | `provider_config_invalid`  | 500  | Provider configuration is broken or incomplete.          | Contact The Aggregator support. This is a platform-side issue.    |
+
+### Provider Launch Errors (E1050-E1056)
+
+These errors occur when launching a game through the provider wizard or test flow.
+
+| Code   | Type                              | HTTP | Description                                              | Action                                                            |
+|--------|-----------------------------------|------|----------------------------------------------------------|-------------------------------------------------------------------|
+| E1050  | `provider_launch_auth_failed`     | 401  | Authentication with the provider failed.                 | Check provider API credentials in your configuration.             |
+| E1051  | `provider_launch_game_not_found`  | 404  | The provider does not recognize this game.               | Verify the game exists in the provider's catalog.                 |
+| E1052  | `provider_launch_rate_limited`    | 429  | Provider-side rate limit hit.                            | Wait and retry. This is the provider's rate limit, not ours.      |
+| E1053  | `provider_launch_timeout`         | 504  | Provider did not respond in time.                        | Retry. If persistent, check provider status page.                 |
+| E1054  | `provider_launch_unavailable`     | 502  | Provider launch endpoint is down.                        | Retry after a delay. Check provider status.                       |
+| E1055  | `provider_launch_no_url`          | 502  | Provider returned a response but no launch URL.          | Contact support. Likely a provider-side issue.                    |
+| E1056  | `provider_launch_unsafe_url`      | 502  | Provider returned a URL that failed safety validation.   | Contact support.                                                  |
+
+### Branding Errors (E1010-E1014)
+
+| Code   | Type                               | HTTP | Description                                              | Action                                          |
+|--------|-------------------------------------|------|----------------------------------------------------------|-------------------------------------------------|
+| E1010  | `branding_upload_too_large`        | 413  | Uploaded branding asset exceeds the size limit.          | Reduce file size and re-upload.                 |
+| E1011  | `branding_invalid_file_type`       | 400  | File type is not accepted for branding assets.           | Use a supported format (PNG, SVG, JPEG).        |
+| E1012  | `branding_profile_not_found`       | 404  | Branding profile does not exist.                         | Create a branding profile first.                |
+| E1013  | `branding_processing_in_progress`  | 409  | A branding upload is already being processed.            | Wait for the current upload to finish.          |
+| E1014  | `branding_no_assets`               | 404  | No branding assets have been uploaded yet.               | Upload branding assets before proceeding.       |
+
+### Game Asset Errors (E1020-E1023)
+
+| Code   | Type                           | HTTP | Description                                              | Action                                          |
+|--------|--------------------------------|------|----------------------------------------------------------|-------------------------------------------------|
+| E1020  | `game_asset_upload_too_large`  | 413  | Game asset file exceeds the size limit.                  | Reduce file size and re-upload.                 |
+| E1021  | `game_asset_invalid_file_type` | 400  | File type is not accepted for game assets.               | Use a supported format.                         |
+| E1022  | `game_asset_not_found`         | 404  | Requested game asset does not exist.                     | Verify the asset ID.                            |
+| E1023  | `game_asset_limit_exceeded`    | 400  | Maximum number of assets per game has been reached.      | Remove unused assets before uploading new ones. |
+
+---
+
+## Game Errors (E2xxx)
+
+Errors related to game lookup and availability.
+
+| Code   | Type                        | HTTP | Description                                              | Operator Action                                                   |
+|--------|-----------------------------|------|----------------------------------------------------------|-------------------------------------------------------------------|
+| E2001  | `game_not_found`            | 404  | Game ID does not exist or is not enabled for your account. | Verify the `game_id` against the catalog returned by `GET /v1/games`. |
+| E2002  | `game_not_enabled`          | 403  | Game exists in the catalog but is currently disabled.    | Choose a different game or contact support to enable it.          |
+| E2003  | `game_blocked_jurisdiction` | 403  | Game is not available in the player's jurisdiction.      | Do not offer this game to players in the blocked country. Check the `blocked_jurisdictions` field on the game object. |
+
+---
+
+## Session Errors (E3xxx)
+
+Errors related to game session lifecycle and player state.
+
+| Code   | Type                     | HTTP | Description                                              | Operator Action                                                   |
+|--------|--------------------------|------|----------------------------------------------------------|-------------------------------------------------------------------|
+| E3001  | `session_not_found`      | 404  | Session does not exist or belongs to a different operator. | Verify the `session_id`. Sessions are scoped to your API key.    |
+| E3002  | `session_expired`        | 410  | Session has expired. Sessions have a 24-hour lifetime.   | Create a new session via `POST /v1/sessions`.                    |
+| E3003  | `session_limit_exceeded` | 429  | Too many concurrent sessions for this operator. | Complete or expire existing sessions before creating new ones.   |
+| E3004  | `player_self_excluded`   | 403  | Player is on the self-exclusion list.                    | Do not allow this player to play. This is a regulatory requirement. |
+
+---
+
+## Transaction Errors (E4xxx)
+
+Errors related to wallet callbacks and financial operations.
+
+| Code   | Type                    | HTTP | Description                                              | Operator Action                                                   |
+|--------|-------------------------|------|----------------------------------------------------------|-------------------------------------------------------------------|
+| E4001  | `insufficient_balance`  | 400  | Player balance is too low for this bet amount.           | Return the current balance in your callback response. The platform will display an insufficient funds message to the player. |
+| E4002  | `duplicate_transaction`  | 409  | This transaction ID has already been processed.          | This is expected behavior -- the idempotency check fired. Return the original response for this `transaction_id`. |
+| E4003  | `amount_exceeds_limit`  | 400  | Bet amount exceeds the configured maximum.               | Check your operator limits. The `details` field includes the current limit. |
+| E4004  | `invalid_amount`        | 400  | Amount is negative, zero, or not a valid number.         | Fix the amount value in your callback response.                  |
+| E4005  | `loss_limit_exceeded`   | 400  | Player has hit their loss limit for the configured period. | The platform enforces this automatically. Do not allow further bets until the period resets. |
+
+---
+
+## Auth Errors (E5xxx)
+
+Errors related to API key authentication, HMAC signature verification, and account deletion.
+
+| Code   | Type                          | HTTP | Description                                              | Operator Action                                                   |
+|--------|-------------------------------|------|----------------------------------------------------------|-------------------------------------------------------------------|
+| E5001  | `callback_signature_invalid`  | 401  | HMAC signature verification failed on a callback request. | Verify you are using the correct `callback_secret` and signing the request body correctly. See the [signature verification guide](/guides/signature-verification/). |
+| E5002  | `api_key_invalid`             | 401  | API key is not recognized.                               | Check that you are sending the correct key in the `Authorization` header. All operator keys are prefixed `sk_live_*`. |
+| E5003  | `api_key_expired`             | 401  | API key has expired.                                     | Generate a new API key in the operator cabinet under Settings > API Keys. |
+| E5004  | `scope_insufficient`          | 403  | This API key does not have permission for the requested operation. | Check the scopes assigned to your key. You may need a key with broader permissions. |
+| E5020  | `deletion_blocked`            | 409  | Account deletion is blocked (active sessions or pending transactions). | Resolve all pending operations before requesting deletion.       |
+| E5021  | `deletion_failed`             | 500  | Account deletion encountered an unexpected error.        | Retry or contact support.                                        |
+| E5022  | `deletion_token_invalid`      | 400  | The deletion confirmation token is invalid.              | Request a new deletion token.                                    |
+| E5023  | `deletion_token_expired`      | 400  | The deletion confirmation token has expired.             | Request a new deletion token and confirm within the time window. |
+
+---
+
+## Operator Config Errors (E6xxx)
+
+Errors related to operator account setup and configuration.
+
+| Code   | Type                      | HTTP | Description                                              | Operator Action                                                   |
+|--------|---------------------------|------|----------------------------------------------------------|-------------------------------------------------------------------|
+| E6001  | `operator_not_configured` | 400  | No operator settings found for this provider integration. | Set up your `callback_url` in the operator cabinet before making API calls. |
+| E6002  | `callback_url_invalid`    | 400  | The callback URL failed SSRF validation.                 | Use a publicly accessible HTTPS URL. Private IPs, localhost, and non-HTTPS URLs are rejected. |
+| E6003  | `operator_disabled`       | 403  | Operator account has been disabled.                      | Contact The Aggregator support.                                  |
+
+---
+
+## KYB / Organization Errors (E7xxx)
+
+Errors related to Know Your Business verification and organization management.
+
+| Code   | Type                              | HTTP | Description                                              | Action                                          |
+|--------|-----------------------------------|------|----------------------------------------------------------|-------------------------------------------------|
+| E7001  | `org_not_found`                   | 404  | Organization does not exist.                             | Check the organization ID.                      |
+| E7002  | `org_already_exists`              | 409  | An organization with this identifier already exists.     | Use the existing organization or choose a different name. |
+| E7003  | `kyb_not_submittable`             | 400  | KYB application is not in a submittable state.           | Complete all required fields before submitting.  |
+| E7004  | `kyb_documents_incomplete`        | 400  | Required KYB documents are missing.                      | Upload all required documents.                  |
+| E7005  | `kyb_ubo_incomplete`              | 400  | Ultimate Beneficial Owner information is incomplete.     | Provide all required UBO details.               |
+| E7006  | `kyb_already_submitted`           | 409  | KYB application has already been submitted for review.   | Wait for the review to complete.                |
+| E7007  | `kyb_doc_not_found`               | 404  | KYB document not found.                                  | Verify the document ID.                         |
+| E7008  | `kyb_doc_not_deletable`           | 400  | Document cannot be deleted in the current KYB state.     | Documents cannot be removed after submission.   |
+| E7009  | `kyb_ubo_not_found`               | 404  | UBO record not found.                                    | Verify the UBO ID.                              |
+| E7010  | `kyb_invalid_status_transition`   | 400  | Invalid KYB status transition.                           | Check the allowed status transitions in the KYB docs. |
+| E7011  | `kyb_upload_too_large`            | 413  | KYB document exceeds the upload size limit.              | Reduce file size and re-upload.                 |
+| E7012  | `kyb_invalid_file_type`           | 400  | File type is not accepted for KYB documents.             | Use PDF, PNG, or JPEG.                          |
+| E7013  | `kyb_officer_not_found`           | 404  | KYB officer record not found.                            | Verify the officer ID.                          |
+| E7014  | `kyb_screening_failed`            | 500  | Automated screening encountered an error.                | Retry or contact support.                       |
+| E7015  | `kyb_review_not_found`            | 404  | KYB review record not found.                             | Verify the review ID.                           |
+
+---
+
+## Member Management Errors (E8xxx)
+
+Errors related to team members, invitations, and role management within an organization.
+
+| Code   | Type                            | HTTP | Description                                              | Action                                          |
+|--------|---------------------------------|------|----------------------------------------------------------|-------------------------------------------------|
+| E8001  | `member_not_found`              | 404  | Team member not found.                                   | Verify the member ID.                           |
+| E8002  | `member_already_exists`         | 409  | User is already a member of this organization.           | No action needed -- member already added.       |
+| E8003  | `invite_not_found`              | 404  | Invitation not found.                                    | Verify the invite token or ID.                  |
+| E8004  | `invite_expired`                | 410  | Invitation has expired.                                  | Send a new invitation.                          |
+| E8005  | `invite_already_accepted`       | 409  | Invitation has already been accepted.                    | No action needed.                               |
+| E8006  | `invite_email_mismatch`         | 400  | The accepting user's email does not match the invite.    | Accept with the email address the invite was sent to. |
+| E8007  | `join_request_not_found`        | 404  | Join request not found.                                  | Verify the request ID.                          |
+| E8008  | `join_request_duplicate`        | 409  | A join request from this user already exists.            | Wait for the existing request to be reviewed.   |
+| E8009  | `role_change_forbidden`         | 403  | You do not have permission to change this role.          | Only owners and admins can modify roles.        |
+| E8010  | `cannot_modify_higher_role`     | 403  | You cannot modify a member with a higher role than yours.| Ask an owner to make this change.               |
+| E8011  | `cannot_modify_self`            | 400  | You cannot modify your own role or status.               | Ask another admin or owner to make this change. |
+| E8012  | `transfer_failed`               | 500  | Ownership transfer failed.                               | Retry or contact support.                       |
+| E8013  | `member_already_suspended`      | 409  | Member is already suspended.                             | No action needed.                               |
+| E8014  | `member_not_active`             | 400  | Member is not in an active state.                        | Reactivate the member first.                    |
+| E8017  | `invite_rate_limited`           | 429  | Too many invitations sent in a short period.             | Wait before sending more invitations.           |
+| E8018  | `last_owner_cannot_leave`       | 400  | The last owner cannot leave the organization.            | Transfer ownership before leaving.              |
+| E8019  | `user_already_in_org`           | 409  | User already belongs to an organization.                 | A user can only belong to one organization.     |
+| E8020  | `join_code_invalid`             | 400  | The join code is invalid or expired.                     | Request a fresh join code from an admin.        |
+| E8021  | `transfer_pending`              | 409  | An ownership transfer is already in progress.            | Wait for the current transfer to complete.      |
+| E8022  | `invite_registration_required`  | 400  | The invited user must register an account first.         | Register at the platform before accepting the invite. |
+
+---
+
+## Billing Errors (EBxxx)
+
+Errors related to billing, payments, and package purchases.
+
+| Code   | Type                          | HTTP | Description                                              | Action                                          |
+|--------|-------------------------------|------|----------------------------------------------------------|-------------------------------------------------|
+| EB001  | `billing_kyb_required`        | 403  | KYB verification must be completed before billing.       | Complete the KYB process first.                 |
+| EB002  | `billing_aml_cap_exceeded`    | 400  | Transaction exceeds AML compliance cap.                  | Contact support for limit increases.            |
+| EB003  | `billing_package_not_found`   | 404  | Billing package does not exist.                          | Verify the package ID.                          |
+| EB004  | `billing_purchase_not_found`  | 404  | Purchase record not found.                               | Verify the purchase ID.                         |
+| EB005  | `billing_purchase_limit`      | 400  | Purchase limit reached for this package.                 | Wait for the next billing period.               |
+| EB006  | `billing_payment_failed`      | 400  | Payment processing failed.                               | Check payment method details and retry.         |
+| EB007  | `billing_invoice_not_found`   | 404  | Invoice not found.                                       | Verify the invoice ID.                          |
+| EB008  | `billing_insufficient_balance`| 400  | Insufficient billing balance.                            | Top up your account balance.                    |
+| EB009  | `billing_manual_review`       | 202  | Transaction has been flagged for manual review.          | Wait for review to complete. You will be notified. |
+| EB010  | `billing_offer_not_accepted`  | 400  | The billing offer has not been accepted.                 | Accept the offer terms before proceeding.       |
+| EB011  | `billing_webhook_invalid`     | 400  | Billing webhook payload is invalid.                      | Check the webhook signature and payload format. |
+
+---
+
+## Affiliate Errors (EAxxx)
+
+Errors related to the affiliate/referral program.
+
+| Code   | Type                                    | HTTP | Description                                              | Action                                          |
+|--------|-----------------------------------------|------|----------------------------------------------------------|-------------------------------------------------|
+| EA001  | `affiliate_not_eligible`                | 403  | Account is not eligible for the affiliate program.       | Check eligibility requirements.                 |
+| EA002  | `affiliate_insufficient_balance`        | 400  | Affiliate balance is too low for withdrawal.             | Wait for more earnings to accumulate.           |
+| EA003  | `affiliate_withdrawal_rate_limited`     | 429  | Too many withdrawal requests.                            | Wait before requesting another withdrawal.      |
+| EA004  | `affiliate_withdrawal_failed`           | 500  | Withdrawal processing failed.                            | Retry or contact support.                       |
+| EA005  | `affiliate_invalid_wallet`              | 400  | Provided wallet address is invalid.                      | Check the wallet address format.                |
+| EA006  | `affiliate_below_min_withdrawal`        | 400  | Amount is below the minimum withdrawal threshold.        | Check the minimum withdrawal amount in settings.|
+| EA007  | `affiliate_withdrawal_pending_approval` | 202  | Withdrawal is pending manual approval.                   | Wait for approval. You will be notified.        |
+| EA008  | `affiliate_link_failed`                 | 500  | Failed to generate affiliate link.                       | Retry or contact support.                       |
+
+---
+
+## Rate Limiting (E9xxx)
+
+| Code   | Type           | HTTP | Description                                              | Operator Action                                                   |
+|--------|----------------|------|----------------------------------------------------------|-------------------------------------------------------------------|
+| E9001  | `rate_limited`  | 429  | Too many requests. You have exceeded the per-key rate limit. | Check the `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` response headers. **Test keys**: 60 requests/minute. **Live keys**: 600 requests/minute. Implement exponential backoff. |
+
+---
+
+## Internal Errors (E0xxx)
+
+| Code   | Type              | HTTP | Description                                              | Operator Action                                                   |
+|--------|-------------------|------|----------------------------------------------------------|-------------------------------------------------------------------|
+| E0001  | `internal_error`  | 500  | Unexpected server error.                                 | Retry with exponential backoff. If the error persists for more than 5 minutes, contact support with the `X-Request-Id` header from the response. |
+| E0002  | `database_error`  | 503  | Database connectivity issue. This is transient.          | Retry after a short delay. These errors typically resolve within seconds. |
+
+---
+
+## HTTP Status Code Summary
+
+For quick reference, here is how error codes map to HTTP status codes:
+
+| HTTP Status | Meaning                  | Error Code Ranges                          |
+|-------------|--------------------------|-------------------------------------------|
+| 400         | Bad Request              | E4001, E4003, E4004, E4005, E6001, E6002, E7003-E7005, E7008, E7012, E8006, E8011, E8014, E8018, E8020, E8022, EB002, EB005, EB006, EB008, EB010, EB011, EA002, EA005, EA006 |
+| 401         | Unauthorized             | E5001, E5002, E5003, E1050              |
+| 403         | Forbidden                | E1003, E2002, E2003, E3004, E5004, E6003, E8009, E8010, EB001, EA001 |
+| 404         | Not Found                | E1001, E2001, E3001, E7001, E7007, E7009, E7013, E7015, E8001, E8003, E8007, EB003, EB004, EB007, E1012, E1014, E1022 |
+| 409         | Conflict                 | E4002, E5020, E7002, E7006, E8002, E8005, E8008, E8013, E8021, E1013 |
+| 410         | Gone                     | E3002, E8004                              |
+| 413         | Payload Too Large        | E1010, E1020, E7011                       |
+| 429         | Too Many Requests        | E3003, E9001, E1052, E8017, EA003        |
+| 500         | Internal Server Error    | E0001, E1004, E5021, E7014, E8012, EA004, EA008 |
+| 502         | Bad Gateway              | E1002, E1054, E1055, E1056              |
+| 503         | Service Unavailable      | E0002                                     |
+| 504         | Gateway Timeout          | E1053                                     |
+
+---
+
+## Best Practices for Error Handling
+
+1. **Match on `code`, not `message`.** The `message` field may change between versions. The `code` field is stable.
+2. **Log the full error body.** Include `code`, `type`, and `details` in your logs for debugging.
+3. **Retry transient errors.** Codes E0001, E0002, E1002, E1053, and E1054 are transient. Use exponential backoff with jitter.
+4. **Do not retry 4xx errors.** Client errors (400, 401, 403, 404, 409) indicate a problem with the request. Fix the request before retrying.
+5. **Respect rate limit headers.** When you receive E9001, read `X-RateLimit-Reset` to know when you can resume requests.
+6. **Handle E4002 (duplicate) gracefully.** This is expected in idempotent retry flows. Return the same response you returned for the original transaction.
+
+---
+
+<!-- resources/versioning -->
+
+The Aggregator uses a **hybrid versioning model** combining URL-path versioning for breaking changes and an HTTP header for additive minor revisions. This mirrors the model used by Stripe and Anthropic.
+
+## Major version — URL path
+
+Breaking changes ship under a new path version:
+
+```
+https://api.aggregator.gg/v1/...     ← current
+https://api.aggregator.gg/v2/...     ← next breaking version (not yet released)
+```
+
+Major versions live **in parallel** during the deprecation window — your existing `/v1/` integration keeps working while `/v2/` is available for early adopters.
+
+## Minor revisions — Aggregator-Version header
+
+Additive, non-breaking changes (new optional fields, new endpoints, new error codes) ship behind a date-stamped header:
+
+```http
+Aggregator-Version: 2026-05-26
+```
+
+- **If you omit the header:** you get the latest stable minor revision for your major version
+- **If you pin the header:** you get exactly the schema that existed on that date
+
+We recommend **pinning the header in production** so new minor revisions cannot affect your behaviour without an explicit upgrade.
+
+## What counts as breaking
+
+| Change | Major or minor? |
+|---|---|
+| Add a new endpoint | Minor (additive) |
+| Add a new optional request field | Minor |
+| Add a new field to a response | Minor (consumers must ignore unknown fields) |
+| Add a new error code | Minor |
+| Rename an existing field | **Major** |
+| Remove an existing field | **Major** |
+| Change the type of an existing field | **Major** |
+| Tighten validation (previously accepted values rejected) | **Major** |
+| Change the meaning of an existing field | **Major** |
+
+## Deprecation lifecycle
+
+When we deprecate an endpoint or field, you'll see two HTTP response headers:
+
+```http
+Deprecation: true
+Sunset: Wed, 26 Nov 2026 00:00:00 GMT
+```
+
+- `Deprecation: true` — [RFC 9745](https://datatracker.ietf.org/doc/rfc9745/). The endpoint still works but should be migrated.
+- `Sunset: <RFC 8594 date>` — [RFC 8594](https://datatracker.ietf.org/doc/rfc8594/). On this date, the endpoint will be removed.
+
+**Minimum deprecation window: 180 days** from announcement to sunset. No exceptions for breaking removal.
+
+Deprecated endpoints are also flagged with `x-deprecated: true` in the [OpenAPI spec](/api/v1/) and surfaced with a yellow banner in this documentation.
+
+## How we announce changes
+
+- **Changelog** — every shipping change is documented at [/resources/changelog/](/resources/changelog/) with a date, scope, and migration notes
+- **Email to API key contacts** — owners of every active API key receive the announcement at least 14 days before a minor revision and at least 90 days before a deprecation
+- **Dashboard banner** — appears in the cabinet for affected operators
+
+## Migration support
+
+When we ship a `v2/`, expect:
+
+- A migration guide in this documentation
+- A side-by-side comparison table for every changed endpoint
+- A migration helper script in the official TypeScript SDK (distributed via your account manager)
+- Direct technical-account-manager support if you're paying for it
+
+We will never sunset a major version with less than 180 days notice. Most migrations have been ≥ 6 months in practice.
+
+---
+
+<!-- resources/changelog -->
+
+This page records every shipping change to the Machine API. Subscribe by watching [github.com/aggregator-gg/docs](https://github.com/aggregator-gg/docs).
+
+---
+
+## 2026-05-27 — public status page
+
+- 🆕 **Status page** launched at [status.aggregator.gg](https://status.aggregator.gg). Public uptime + incident history for the four operator-facing surfaces (API, cabinet, marketing site, docs). Subscribe to incident updates via email.
+
+## 2026-05-26 — initial public documentation
+
+- 🆕 **Documentation:** `docs.aggregator.gg` launched.
+- 🆕 **OpenAPI 3.1 spec** published — see the public mirror at [`aggregator-gg/docs/openapi/aggregator.yaml`](https://github.com/aggregator-gg/docs/blob/main/openapi/aggregator.yaml). Use it for SDK generation, Postman collections, and contract testing on your side.
+- 🆕 **Versioning policy:** Hybrid path + `Aggregator-Version` header model (see [Versioning](/resources/versioning/)). 180-day minimum deprecation window.
+- 🆕 **`Idempotency-Key` header** documented as required on `POST /v1/sessions` and other financial endpoints.
+
+---
+
+## Earlier — pre-changelog
+
+Releases before this changelog are not retrospectively listed. Reach out to your account contact if you need a specific historical change documented.
+
+---
+
+<!-- resources/postman -->
+
+The Machine API ships with a Postman collection generated automatically from the [OpenAPI 3.1 spec](https://github.com/aggregator-gg/docs/blob/main/openapi/aggregator.yaml). Import it once, then iterate on requests without typing curls by hand.
+
+## What's inside
+
+- Every operation in `openapi.yaml`, grouped by tag (Games, Sessions, Transactions, Health)
+- Body schemas pre-filled with example values
+- Three collection variables you can edit once and reuse everywhere
+
+| Variable | Default | What to do |
+|---|---|---|
+| `base_url` | `https://api.aggregator.gg/v1` | Leave as-is for all operators |
+| `apiKey` | `sk_live_REPLACE_ME` | Paste your real key (see [Authentication](/get-started/authentication/)) |
+| `idempotencyKey` | `{{$randomUUID}}` | Leave as-is — Postman regenerates a UUID per request |
+
+## Import
+
+### Postman
+
+1. Postman → **File** → **Import** → drag the downloaded JSON
+2. The collection appears under your workspace
+3. Open the collection's **Variables** tab and paste your real `apiKey`
+4. Send any request
+
+### Insomnia
+
+1. Insomnia → **Application Menu** → **Import** → choose **From File** → pick the JSON
+2. Update the environment variables in the **Manage Environments** dialog
+
+### Hurl / Bruno / other tools
+
+The collection is JSON in the standard Postman v2.1 format. Most modern API clients import it directly.
+
+## How it's built
+
+Every CI build of `docs.aggregator.gg` regenerates the collection from `openapi/aggregator.yaml` via the [`openapi-to-postmanv2`](https://github.com/postmanlabs/openapi-to-postman) converter. The download URL is stable — bookmark it.
+
+The generation script lives at [`scripts/build-postman.mjs`](https://github.com/aggregator-gg/docs/blob/main/scripts/build-postman.mjs) in the docs repo.
+
+## When the spec changes
+
+Re-download the JSON. Postman does not auto-sync, so you should refresh the collection whenever we publish a [Changelog](/resources/changelog/) entry that affects request or response shapes.
+
+---

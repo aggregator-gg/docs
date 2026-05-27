@@ -1,0 +1,47 @@
+# The Aggregator API
+
+> B2B game aggregation platform. Server-to-server REST API for casino operators to browse a unified game catalog, launch real-money and demo sessions, and receive HMAC-signed wallet callbacks.
+
+Auth: Bearer token (`sk_live_*` prefix). Base URL: `https://api.aggregator.gg/v1`. Versioning: hybrid path version + `Aggregator-Version` header.
+
+## API contract
+
+- [OpenAPI 3.1 spec (raw YAML)](https://raw.githubusercontent.com/aggregator-gg/docs/main/openapi/aggregator.yaml): Machine-readable contract. 9 endpoints, full request/response schemas, examples. **This is the source of truth — start here.**
+- [Postman collection](https://docs.aggregator.gg/downloads/aggregator.postman_collection.json): Auto-generated from the OpenAPI spec, pre-configured with `base_url` + `apiKey` + `idempotencyKey` variables.
+- [Interactive API reference](https://docs.aggregator.gg/api/v1/operations/listgames/): Browseable Redoc-style documentation rendered from the spec.
+
+## Get started
+
+- [Introduction](https://docs.aggregator.gg/get-started/introduction/): What the platform does, who it's for, what you own vs what we handle.
+- [Quickstart](https://docs.aggregator.gg/get-started/quickstart/): From `npm install` to first game launch in 15 minutes.
+- [Authentication](https://docs.aggregator.gg/get-started/authentication/): API keys, rotation, rate limits, security.
+- [Environments & testing](https://docs.aggregator.gg/get-started/environments/): One production environment, welcome credit pack for pre-launch testing, demo sessions for no-money UI flows.
+- [How a game round works](https://docs.aggregator.gg/get-started/how-a-round-works/): Full session → bet → win → settle lifecycle with sequence diagram.
+
+## Integration guides
+
+- [Integration walkthrough](https://docs.aggregator.gg/guides/integration/): Step-by-step from registration to go-live.
+- [Code samples](https://docs.aggregator.gg/guides/code-samples/): TypeScript, PHP, Python snippets for the five essential operations.
+- [Wallet callbacks](https://docs.aggregator.gg/guides/wallet-callbacks/): Receive HMAC-signed bet/win events. Retry semantics, response shapes, edge cases.
+- [Signature verification](https://docs.aggregator.gg/guides/signature-verification/): HMAC-SHA256 verification in TS/PHP/Python with timing-safe compare. The highest-leverage snippet — copy verbatim.
+- [Idempotency](https://docs.aggregator.gg/guides/idempotency/): `Idempotency-Key` header semantics. Required on financial POST endpoints. 24h replay window.
+- [Testing your integration](https://docs.aggregator.gg/guides/testing-sandbox/): Recommended pre-launch test sequence using welcome credits.
+- [Going live](https://docs.aggregator.gg/guides/go-live/): 10-item production checklist.
+
+## Reference
+
+- [Error codes](https://docs.aggregator.gg/resources/error-codes/): Full machine-parseable code list (E0xxx-EBxxx) with HTTP status mappings.
+- [Versioning policy](https://docs.aggregator.gg/resources/versioning/): Path version `/v1/` for breaking changes, `Aggregator-Version` header for additive minor revisions. 180-day deprecation window. RFC 9745 + RFC 8594 headers.
+- [Changelog](https://docs.aggregator.gg/resources/changelog/): Every shipping change to the Machine API.
+- [Status](https://status.aggregator.gg): Real-time uptime + incident history for api / cabinet / public site / docs.
+
+## Other languages (SDK generation)
+
+For Java, Go, C#, Ruby, Kotlin, Rust — generate a typed client from the OpenAPI spec:
+
+```sh
+npx @openapitools/openapi-generator-cli generate \
+  -i https://raw.githubusercontent.com/aggregator-gg/docs/main/openapi/aggregator.yaml \
+  -g python \
+  -o ./aggregator-client
+```
