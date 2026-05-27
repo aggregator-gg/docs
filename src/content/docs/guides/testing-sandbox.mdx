@@ -29,10 +29,10 @@ Run these in order during integration. Each step exercises a distinct money-path
 
 ### 2. Callback signature verification — both happy path and tampered
 
-- Trigger a real spin in the launched game. The provider emits a `bet` callback that arrives at your `callback_url` with an `X-Aggregator-Signature` header.
+- Trigger a real spin in the launched game. The provider emits a `bet` callback that arrives at your `callback_url` with an `X-SIGNATURE` header.
 - Confirm your [signature verification](/guides/signature-verification/) returns `200` on legitimate callbacks.
 - **Tamper-test your verifier.** Take a captured legitimate callback, change one byte in the body, replay it to your endpoint. You must reject it with non-2xx. If your code accepts the tampered version, your signature check is broken and money loss is a question of when, not if.
-- **Replay-test.** Capture a legitimate callback and replay it 30 minutes later. The platform-side replay window rejects it (15-minute max age), but your own verification should also reject it — defense in depth.
+- **Replay-test.** Capture a legitimate callback and re-send it. Your own `transaction_id` dedup (Idempotency guide) must short-circuit the replay without any wallet movement. The platform does not enforce a signature-timestamp replay window — your dedup IS the defence.
 
 ### 3. Idempotency
 

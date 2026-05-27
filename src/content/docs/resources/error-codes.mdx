@@ -235,7 +235,7 @@ Errors related to the affiliate/referral program.
 
 | Code   | Type           | HTTP | Description                                              | Operator Action                                                   |
 |--------|----------------|------|----------------------------------------------------------|-------------------------------------------------------------------|
-| E9001  | `rate_limited`  | 429  | Too many requests. You have exceeded the per-key rate limit. | Check the `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` response headers. **Test keys**: 60 requests/minute. **Live keys**: 600 requests/minute. Implement exponential backoff. |
+| E9001  | `rate_limited`  | 429  | Too many requests. You have exceeded the per-key or per-operator rate limit. | Check the `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` response headers. Defaults: **600 req/min per key**, **3 000 req/min per operator account**. Implement exponential backoff. |
 
 ---
 
