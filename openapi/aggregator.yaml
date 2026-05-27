@@ -28,8 +28,6 @@ info:
 servers:
   - url: https://api.aggregator.gg/v1
     description: Production
-  - url: https://api.the-aggregator.io/v1
-    description: Staging
 
 security:
   - bearerAuth: []

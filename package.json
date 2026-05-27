@@ -7,8 +7,9 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "node scripts/build-postman.mjs && astro build",
+    "build": "node scripts/build-postman.mjs && node scripts/build-llms-full.mjs && astro build",
     "build:postman": "node scripts/build-postman.mjs",
+    "build:llms": "node scripts/build-llms-full.mjs",
     "preview": "astro preview",
     "astro": "astro"
   },
