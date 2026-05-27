@@ -83,8 +83,7 @@ export default defineConfig({
 						{ label: 'Error codes', slug: 'resources/error-codes' },
 						{ label: 'Versioning policy', slug: 'resources/versioning' },
 						{ label: 'Changelog', slug: 'resources/changelog' },
-						// Status page (status.aggregator.gg) is not yet live —
-						// re-add this entry once the subdomain resolves.
+						{ label: 'Status', link: 'https://status.aggregator.gg', attrs: { target: '_blank', rel: 'noopener' } },
 					],
 				},
 			],
