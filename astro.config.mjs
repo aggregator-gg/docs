@@ -17,7 +17,10 @@ export default defineConfig({
 			description: 'Public API documentation for The Aggregator — B2B game aggregation platform.',
 			logo: {
 				src: './src/assets/logo.svg',
-				replacesTitle: false,
+				// Wordmark already includes "AGGREGATOR" text, so replace the
+				// title to avoid duplicate branding. Logo uses currentColor so
+				// it inherits the active theme.
+				replacesTitle: true,
 			},
 			social: [
 				{ icon: 'github', label: 'GitHub', href: 'https://github.com/aggregator-gg/docs' },
@@ -78,7 +81,8 @@ export default defineConfig({
 						{ label: 'Error codes', slug: 'resources/error-codes' },
 						{ label: 'Versioning policy', slug: 'resources/versioning' },
 						{ label: 'Changelog', slug: 'resources/changelog' },
-						{ label: 'Status', link: 'https://status.aggregator.gg' },
+						// Status page (status.aggregator.gg) is not yet live —
+						// re-add this entry once the subdomain resolves.
 					],
 				},
 			],
