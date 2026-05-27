@@ -7,8 +7,9 @@ info:
     browse the game catalog, launch real-money and demo sessions, and query
     transactions.
 
-    **Authentication**: Bearer token via `Authorization` header. Keys are
-    prefixed `sk_live_*` (production) or `sk_test_*` (sandbox).
+    **Authentication**: Bearer token via `Authorization` header. All
+    operator API keys are prefixed `sk_live_*`. Welcome credits make
+    pre-launch testing safe — see docs.aggregator.gg/get-started/environments/.
 
     **Versioning**: Hybrid path-version (`/v1/`) plus `Aggregator-Version`
     header for additive minor revisions. See
@@ -347,7 +348,7 @@ components:
     bearerAuth:
       type: http
       scheme: bearer
-      bearerFormat: sk_live_* or sk_test_*
+      bearerFormat: sk_live_*
 
   parameters:
     IdempotencyKey:
@@ -368,7 +369,7 @@ components:
       schema:
         type: string
         enum: [live, test]
-      description: Echoes whether the key prefix is `sk_live_*` or `sk_test_*`.
+      description: Echoes the active environment for this key.
     RateLimitLimit:
       schema: { type: integer }
       description: Rate-limit ceiling for this key on this endpoint family.
@@ -514,7 +515,7 @@ components:
           type: string
         warning:
           type: string
-          description: Present only on `sk_test_*` responses.
+          description: Reserved for legacy use. Currently never set.
 
     SessionDetail:
       type: object

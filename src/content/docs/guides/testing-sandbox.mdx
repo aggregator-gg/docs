@@ -1,17 +1,73 @@
 ---
-title: "Testing in sandbox"
-description: "Sandbox keys, demo sessions, and tooling for testing your integration without real-money risk."
+title: "Testing your integration"
+description: "Test the full money path with welcome credits, exercise edge cases with demo sessions, and verify wallet reconciliation before customer traffic arrives."
 ---
 
-This page is being written. In the meantime:
+import { Aside } from '@astrojs/starlight/components';
 
-- Use `sk_test_*` keys for sandbox sessions — see [Authentication](/get-started/authentication/)
-- Use `POST /v1/demo-sessions` for demo game launches that don't touch real money
-- Open `https://api.the-aggregator.io` (staging host) to run against the staging cluster
-- See [Environments](/get-started/environments/) for the full environment-isolation model
+You test against the real production cluster with your real `sk_live_*` key. There is no separate sandbox tier. Two mechanisms make this safe:
 
-Coming soon to this page:
+1. **Welcome credits** — every new operator gets a real-money credit pack on the house. You launch real sessions, real provider games, real callbacks. The bets are charged against your operator wallet; the welcome pack funds that wallet until depleted.
+2. **Demo sessions** — `POST /v1/demo-sessions` launches a game with no wallet involvement at all. Use it for UI previews, lobby thumbnails, or when you want to inspect a game without any money flow.
 
-- Postman collection download
-- Echo-callback service for end-to-end test before you have your own callback endpoint stood up
-- Recommended test scenarios (timeout, signature mismatch, double-debit attempt, replay)
+See [Environments & testing](/get-started/environments/) for the operating model.
+
+<Aside type="tip">
+Treat your welcome-pack traffic exactly like real customer traffic. The same code paths handle both. Branching on "is this a test bet?" is an anti-pattern that ages badly — the API does not give you that distinction, and code that depends on one will break the day welcome credits run out.
+</Aside>
+
+## The recommended test sequence
+
+Run these in order during integration. Each step exercises a distinct money-path failure mode that is much cheaper to find here than in production.
+
+### 1. Catalog + session round-trip
+
+- `GET /v1/games` → confirm you receive a populated list.
+- `POST /v1/sessions` with a low-volatility game and a small balance (e.g. EUR 1.00 minor units = 100).
+- Verify the response shape matches your client's expectations — `session_id`, `game_url`, `expires_in: 20`.
+- Redirect a browser to `game_url` within the 20-second window.
+
+### 2. Callback signature verification — both happy path and tampered
+
+- Trigger a real spin in the launched game. The provider emits a `bet` callback that arrives at your `callback_url` with an `X-Aggregator-Signature` header.
+- Confirm your [signature verification](/guides/signature-verification/) returns `200` on legitimate callbacks.
+- **Tamper-test your verifier.** Take a captured legitimate callback, change one byte in the body, replay it to your endpoint. You must reject it with non-2xx. If your code accepts the tampered version, your signature check is broken and money loss is a question of when, not if.
+- **Replay-test.** Capture a legitimate callback and replay it 30 minutes later. The platform-side replay window rejects it (15-minute max age), but your own verification should also reject it — defense in depth.
+
+### 3. Idempotency
+
+- POST the same `Idempotency-Key` twice to `/v1/sessions` with the same body. Confirm the second response is identical to the first and that you see `Idempotent-Replay: true` in headers.
+- POST the same key with a *different* body. Confirm the API returns `409 Conflict`.
+- Pick a key, wait 25 hours, retry — confirm the API treats it as fresh (24h TTL).
+
+### 4. Wallet reconciliation
+
+- After ~50 spins, fetch [`GET /v1/transactions`](/api/v1/operations/listtransactions/) and reconcile against your internal wallet ledger.
+- Every `bet` and `win` transaction should match a corresponding debit/credit in your wallet.
+- Drift in this stage means your callback handler has a race condition, a missed transaction, or a duplicated one. Fix it now.
+
+### 5. Failure-mode coverage
+
+Force each of these and confirm your handler does the right thing:
+
+| Scenario | How to force | What should happen |
+|---|---|---|
+| Slow callback response | Add `sleep(15)` to your callback handler temporarily | Platform marks callback `forwarded` after timeout, retries kick in |
+| 5xx callback response | Return `500` from your handler for one spin | Platform retries with exponential backoff per [retry policy](/guides/wallet-callbacks/) |
+| Insufficient balance | Set wallet to less than the next bet amount | Provider receives the rejection, player sees an error |
+| Self-excluded player | Mark the player self-excluded in your system before launching | `POST /v1/sessions` returns `403` with `E0301 player_self_excluded` |
+| Expired session | Wait > 20 seconds before redirecting to `game_url` | Player sees provider error page; no wallet movement |
+
+### 6. Going-live readiness
+
+Once steps 1-5 are green, walk through the [Go-live checklist](/guides/go-live/) before opening customer traffic.
+
+## Tools
+
+- **Postman collection** — generated from the [OpenAPI spec](https://github.com/aggregator-gg/docs/blob/main/openapi/aggregator.yaml). Import the YAML into Postman to get every endpoint pre-configured.
+- **Demo sessions** for game previews without wallet involvement: `POST /v1/demo-sessions`.
+- **Echo callback receiver** (coming soon) — a platform-hosted callback URL that signs back to your operator account, so you can test signature verification before standing up your own callback endpoint.
+
+## What used to be here
+
+This page previously described an `sk_test_*` sandbox tier. That tier no longer exists — welcome credits + demo sessions replaced it. If you're following an old integration guide that references `sk_test_*` keys, ignore the prefix and use your `sk_live_*` key directly.
