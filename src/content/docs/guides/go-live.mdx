@@ -1,12 +1,12 @@
 ---
 title: "Operator Go-Live Checklist"
-description: "Complete every item on this checklist before switching from `sk_test_*` to `sk_live_*` keys. Each item represents a real failure mode observed in production integrations. Skipping any item risks player-facing outages, financial discrepancies, or regulatory violations."
+description: "Complete every item on this checklist before you exhaust the welcome credit pack and start funding real customer traffic. Each item represents a real failure mode observed in production integrations. Skipping any item risks player-facing outages, financial discrepancies, or regulatory violations."
 ---
 
 ## Prerequisites
 
-- [ ] You have a working integration in the [test environment](./environments.md) with all callback flows passing.
-- [ ] You have read the [error code reference](./error-codes.md) and handle all relevant codes.
+- [ ] You have a working integration validated end-to-end against welcome-credit traffic — see [Testing your integration](/guides/testing-sandbox/).
+- [ ] You have read the [error code reference](/resources/error-codes/) and handle all relevant codes.
 
 ---
 
@@ -104,7 +104,7 @@ If your endpoint does not respond within 5 seconds, the platform times out the r
 - [ ] The certificate is not expired and will not expire within the next 30 days.
 - [ ] The certificate covers the exact domain in your `callback_url` (no hostname mismatch).
 
-The platform rejects callback URLs that fail SSRF validation or use HTTP. See [E6002 `callback_url_invalid`](./error-codes.md#operator-config-errors-e6xxx).
+The platform rejects callback URLs that fail SSRF validation or use HTTP. See [E6002 `callback_url_invalid`](/resources/error-codes/).
 
 ---
 
@@ -125,7 +125,7 @@ Without monitoring, you will not know when your integration is failing until pla
 
 **You must respect self-exclusion signals from the platform.**
 
-- [ ] When you receive [E3004 `player_self_excluded`](./error-codes.md#session-errors-e3xxx), you do not allow the player to start a new game session.
+- [ ] When you receive [E3004 `player_self_excluded`](/resources/error-codes/), you do not allow the player to start a new game session.
 - [ ] You do not display games or a "Play" button to self-excluded players.
 - [ ] Your system logs self-exclusion events for audit purposes.
 
@@ -137,11 +137,11 @@ Self-exclusion is a regulatory requirement in most jurisdictions. Failure to enf
 
 After completing all items above:
 
-1. Run your full integration test suite against the test environment.
+1. Run your full integration test suite against welcome-credit traffic — see [Testing your integration](/guides/testing-sandbox/) for the recommended sequence.
 2. Review the checklist with your engineering and compliance teams.
-3. Open **Settings > API Keys** in the operator cabinet and run **Get readiness**.
-4. Use **Promote to live** to create a `sk_live_*` key once the checklist passes.
-5. Deploy with the live key and monitor your first 100 transactions closely.
+3. Confirm in the cabinet that your `sk_live_*` key, callback URL, and callback secret are configured.
+4. Reconcile your wallet ledger against the [transactions API](/api/v1/operations/listtransactions/). Drift here must be fixed before customer traffic opens.
+5. Open customer traffic gradually — monitor your first 100 real-money transactions closely.
 
 ---
 
@@ -162,5 +162,5 @@ These are the most frequent reasons integrations fail in the first 24 hours of p
 
 ## Related Documentation
 
-- [Error Code Reference](./error-codes.md) -- All error codes, HTTP status mappings, and handling guidance.
-- [Test vs Live Environments](./environments.md) -- Environment differences, rate limits, and how to switch.
+- [Error Code Reference](/resources/error-codes/) -- All error codes, HTTP status mappings, and handling guidance.
+- [Environments & testing](/get-started/environments/) -- Environment differences, rate limits, and how to switch.

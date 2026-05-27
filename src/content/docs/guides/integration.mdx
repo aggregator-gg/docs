@@ -61,31 +61,26 @@ Key points to understand:
 
 1. Register as an operator at [app.aggregator.gg/register](https://app.aggregator.gg/register).
 2. Complete the KYB (Know Your Business) verification in the operator cabinet.
-3. Navigate to **Settings > API Keys** in your cabinet.
-4. Use **Get readiness** to confirm the live promotion checklist.
-5. Use **Promote to live** to create the production key when you are ready.
-6. You receive two API keys:
+3. Navigate to **API Keys** in your cabinet.
+4. Create your `sk_live_*` API key. This is the only key tier the platform issues — you'll use the same key for integration testing and for live customer traffic.
+5. Copy the key. **It is shown once** at creation time.
+6. Copy your **callback secret** from the same page. You use this to verify callback signatures.
 
-| Key | Format | Purpose |
-|-----|--------|---------|
-| **Sandbox** | `sk_test_*` | Integration development and testing. No real money, no real providers. |
-| **Production** | `sk_live_*` | Live player traffic. Only use after completing the go-live checklist. |
+> **Welcome credit pack**: every new operator account is provisioned with a small pool of real-money credits funded by the platform. You can run real provider sessions, receive real callbacks, and exercise the full money path before funding your own wallet. Once welcome credits are depleted, you fund the wallet through the normal billing flow. See [Environments & testing](/get-started/environments/) for details.
 
-7. Copy your **callback secret** from the same page. You use this to verify callback signatures.
-
-> **Security**: Store your API keys and callback secret in environment variables or a secrets manager. Never commit them to source control.
+> **Security**: Store your API key and callback secret in environment variables or a secrets manager. Never commit them to source control. Never expose the key in browser-side code — this API is server-to-server only.
 
 ---
 
 ## Step 2: Explore the Game Catalog
 
-Use the sandbox key to browse available games.
+Use your `sk_live_*` key to browse available games.
 
 **Request:**
 
 ```bash
 curl -X GET "https://api.aggregator.gg/v1/games?per_page=5" \
-  -H "Authorization: Bearer sk_test_xxx"
+  -H "Authorization: Bearer sk_live_xxx"
 ```
 
 **Response:**
@@ -119,7 +114,7 @@ curl -X GET "https://api.aggregator.gg/v1/games?per_page=5" \
 ```typescript
 import { Aggregator } from "@aggregator/sdk";
 
-const aggregator = new Aggregator({ apiKey: "sk_test_xxx" });
+const aggregator = new Aggregator({ apiKey: "sk_live_xxx" });
 
 const { games, total } = await aggregator.games.list({
   type: "slots",
@@ -130,7 +125,7 @@ const { games, total } = await aggregator.games.list({
 console.log(`Found ${total} games`);
 ```
 
-You can filter by provider, game type, volatility, RTP range, features, and full-text search. See the [full API reference](machine-api-reference.md) for all query parameters.
+You can filter by provider, game type, volatility, RTP range, features, and full-text search. See the [full API reference](/api/v1/operations/listgames/) for all query parameters.
 
 ---
 
@@ -142,7 +137,7 @@ To launch a game for a player, create a session. The response includes a `game_u
 
 ```bash
 curl -X POST "https://api.aggregator.gg/v1/sessions" \
-  -H "Authorization: Bearer sk_test_xxx" \
+  -H "Authorization: Bearer sk_live_xxx" \
   -H "Idempotency-Key: launch-player-42-20260402-001" \
   -H "Content-Type: application/json" \
   -d '{
@@ -344,19 +339,19 @@ app.post("/callbacks/wallet", async (req, res) => {
 });
 ```
 
-For full callback documentation, see the [Wallet Callback Guide](wallet-callback-guide.md).
+For full callback documentation, see the [wallet callbacks guide](/guides/wallet-callbacks/).
 
 ---
 
 ## Step 5: Test Your Integration
 
-Use your `sk_test_*` sandbox key to test the full flow end-to-end.
+You test against the real production cluster with your `sk_live_*` key. Your **welcome credit pack** subsidises the operator wallet so you can run real provider sessions without funding it. See [Testing your integration](/guides/testing-sandbox/) for the full recommended test sequence.
 
 ### Testing checklist
 
 - [ ] **Game catalog** -- List games and verify filtering works
 - [ ] **Session creation** -- Create a session and confirm you receive a valid `game_url`
-- [ ] **Demo session** -- Create a demo session and verify free-play mode works
+- [ ] **Demo session** -- Create a demo session and verify free-play mode works (no wallet movement)
 - [ ] **Bet callback** -- Verify your endpoint deducts the correct amount and returns the updated balance
 - [ ] **Win callback** -- Verify your endpoint credits the correct amount
 - [ ] **Refund callback** -- Verify your endpoint reverses a bet correctly
@@ -368,7 +363,7 @@ Use your `sk_test_*` sandbox key to test the full flow end-to-end.
 
 ### Viewing transactions
 
-You can inspect all sandbox transactions through the API:
+You can inspect all your transactions through the API:
 
 ```typescript
 const { transactions } = await aggregator.transactions.list({
@@ -383,14 +378,14 @@ Or view them in the operator cabinet under **Transactions**.
 
 ## Step 6: Go Live
 
-Once your sandbox integration passes all tests, you are ready to switch to production.
+Once you have exercised the full callback path against welcome credits and the testing checklist is green, you are ready to open customer traffic.
 
 ### Production checklist
 
 **API and authentication:**
-- [ ] Replace `sk_test_*` with your `sk_live_*` API key in your production environment
-- [ ] Store the production API key and callback secret in a secrets manager (not in code)
-- [ ] Verify your production callback URL is configured in the operator cabinet
+- [ ] Your `sk_live_*` API key and callback secret are stored in a secrets manager, not in code
+- [ ] You have a separate rotated key for CI/integration runs (do not reuse the production key)
+- [ ] Your production callback URL is configured in the operator cabinet
 
 **Callback endpoint:**
 - [ ] Endpoint is publicly accessible over HTTPS (TLS 1.2+)
@@ -418,6 +413,6 @@ Once your sandbox integration passes all tests, you are ready to switch to produ
 
 ## Further Reading
 
-- [Full API Reference](machine-api-reference.md) -- Complete endpoint documentation with request/response schemas
-- [Wallet Callback Guide](wallet-callback-guide.md) -- Detailed callback specification, retry behavior, and edge cases
-- [@aggregator/sdk README](../../packages/sdk/README.md) -- TypeScript SDK installation and usage
+- [Full API Reference](/api/v1/operations/listgames/) -- Complete endpoint documentation with request/response schemas
+- [Wallet Callback Guide](/guides/wallet-callbacks/) -- Detailed callback specification, retry behavior, and edge cases
+- TypeScript SDK — distributed via your account contact

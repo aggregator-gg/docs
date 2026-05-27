@@ -1,134 +1,63 @@
 ---
-title: "Test vs Live Environments"
-description: "The Aggregator provides two isolated environments so you can integrate and test without touching real money or real provider systems. Both environments share the same API surface and game catalog -- the only difference is your API key prefix."
+title: "Environments & testing"
+description: "One production environment, one live API key, and a welcome credit pack so you can test the integration end-to-end with real provider games before funding your wallet."
 ---
 
-## How Environments Work
+The Aggregator has **one production environment**. There is no separate "test" or "sandbox" key tier — you get one `sk_live_*` API key when you register, and you use it for both integration testing and live traffic.
 
-Your API key prefix determines which environment processes your request:
+To make pre-launch testing safe, every new operator account is provisioned with a **welcome credit pack** — a small pool of real-money credits that the platform funds. You can use those credits to launch real provider sessions, receive real wallet callbacks, and exercise the entire money path without funding your own wallet first.
 
-| Prefix      | Environment | Real Money | Provider Calls | Rate Limit     |
-|-------------|-------------|------------|----------------|----------------|
-| `sk_test_*` | Test        | No         | Simulated (some providers) | 60 req/min  |
-| `sk_live_*` | Live        | Yes        | Real           | 600 req/min    |
+When the welcome pack runs out, you fund your operator wallet with credits the normal way (in-cabinet purchase or invoice billing) and continue.
 
-There is no separate base URL. Both environments use the same API endpoint. The platform routes your request based on the key prefix.
+## Base URLs
 
-## Test Environment
+Both rows below speak the same API. Pick whichever cluster matches your operator account.
 
-The test environment is designed for integration development and QA. It behaves like production with a few deliberate constraints.
+| Environment    | Base URL                              | Who uses it |
+|----------------|---------------------------------------|-------------|
+| **Production** | `https://api.aggregator.gg/v1`        | All operators after the platform team activates the account. |
+| **Staging**    | `https://api.aggregator.gg/v1`    | Early-access partners running pre-launch integration QA against a separate cluster with its own data and its own welcome credits. Ask your account contact if you need access. |
 
-### What is the Same
+Staging is **not** for ongoing test traffic once you are live — it has separate operator accounts, separate API keys, and separate balance ledgers. Use welcome credits + demo sessions in production for ongoing testing.
 
-- **API surface**: Every endpoint available in live is available in test. Request and response schemas are identical.
-- **Game catalog**: You see the same games in test as you would in live. Game IDs, metadata, and configurations match.
-- **Error codes**: The same [error codes](./error-codes.md) apply in both environments.
-- **Callback flow**: The platform sends wallet callbacks to your `callback_url` in both environments. Your callback endpoint must be reachable.
+## How welcome credits work
 
-### What is Different
+1. You register your operator account in the [cabinet](https://app.aggregator.gg/register).
+2. The platform team activates your account and credits the welcome pack (typically tens to hundreds of real spins, depending on launch agreement).
+3. Your `sk_live_*` key processes real-money sessions immediately.
+4. Bets are charged against your operator wallet; the welcome pack subsidises that wallet until it is depleted.
+5. Once welcome credits are used up, you continue funding the wallet through the normal billing flow.
 
-| Behavior                  | Test                                       | Live                     |
-|---------------------------|--------------------------------------------|--------------------------|
-| Money                     | No real money. Balances are simulated.     | Real money transactions. |
-| Billing                   | No charges applied.                        | Standard billing applies.|
-| Concurrent sessions       | Max 5 at a time.                           | No fixed limit.          |
-| Rate limit                | 60 requests per minute per key.            | 600 requests per minute per key. |
-| Provider API calls        | Some providers use test/sandbox credentials. No real provider charges. | Real provider API calls. |
-| Response headers          | Includes `X-API-Mode: test`.               | Includes `X-API-Mode: live`. |
-| Warning field             | Responses may include a `warning` field with test-mode notices. | No warning field.        |
+The platform does not distinguish "welcome traffic" from "paid traffic" anywhere in the API surface — every session, transaction, and callback looks identical regardless of which credit source is paying. You do not need to flag test traffic.
 
-### Test Response Headers
+## Demo sessions — no money at all
 
-Every response in the test environment includes an extra header:
+If you want to launch a game purely to inspect the UI or render a preview iframe without any wallet movement, use [`POST /v1/demo-sessions`](/api/v1/operations/createdemosession/) instead of `/v1/sessions`. Demo sessions:
 
-```
-X-API-Mode: test
-```
+- Do not debit any wallet
+- Do not emit `bet` or `win` callbacks
+- Have no impact on your welcome credit balance
 
-Some responses also include a `warning` field in the JSON body:
+Use demo sessions for marketing previews, lobby thumbnails, or showing a game inside your cabinet without any money flow.
 
-```json
-{
-  "data": { ... },
-  "warning": "Test mode: no real money is being transferred."
-}
-```
+## Welcome-pack best practices
 
-Use the `X-API-Mode` header to confirm you are hitting the correct environment. If you see `test` in production, you are using the wrong key.
+- **Treat it like production from day one.** The same money-path code that handles a welcome-pack spin will handle your real customer's first deposit. Do not branch on "is this a test bet?" anywhere — the API does not give you that distinction, and code that branches on it ages badly.
+- **Run your full callback verification path.** Wallet callbacks during welcome-pack testing are real HMAC-signed callbacks from the real provider. If your signature verification has a bug, you find out now, not after you go live.
+- **Reconcile against the [transactions API](/api/v1/operations/listtransactions/).** Before you exhaust the welcome pack, confirm your wallet ledger matches what the platform records. Any drift discovered now is much cheaper to fix than the same drift after real-money traffic starts.
 
----
+## Rate limits
 
-## Getting Test Credentials
+Default rate limits per `sk_live_*` key:
 
-1. **Register** in the operator cabinet at your platform URL.
-2. **Your first API key is always `sk_test_*`.** It is generated automatically when your operator account is created.
-3. Navigate to **Settings > API Keys** in the cabinet to view your test key.
-4. Use this key in the `Authorization` header for all test requests:
+- **100 requests/second** sustained
+- **500 requests/second** burst (5-second window)
+- **10 failed authentication attempts/minute per IP** (brute-force protection)
 
-```
-Authorization: Bearer sk_test_abc123...
-```
+Exceeded limits return `429 Too Many Requests` with a `Retry-After` header.
 
-You can create additional test keys with different scopes from the same settings page.
+## Read next
 
----
-
-## Live Environment
-
-Live keys are issued after you complete the [go-live checklist](./go-live-checklist.md). Live keys process real money and make real calls to game providers.
-
-### Getting Live Credentials
-
-1. Complete all items on the [go-live checklist](./go-live-checklist.md).
-2. Open **Settings > API Keys** in the operator cabinet.
-3. Use **Get readiness** to review what is still missing, then **Promote to live** to create a `sk_live_*` key.
-
-Live keys are self-serve after the readiness checks pass. No account-manager approval flow is required in the current app.
-
----
-
-## Key Differences at a Glance
-
-```
-sk_test_abc123...  -->  Test environment
-                        - No real money
-                        - Max 5 sessions
-                        - 60 req/min
-                        - X-API-Mode: test
-
-sk_live_xyz789...  -->  Live environment
-                        - Real money
-                        - No session cap
-                        - 600 req/min
-                        - X-API-Mode: live
-```
-
----
-
-## Switching from Test to Live
-
-When you are ready to go live:
-
-1. **Complete the [go-live checklist](./go-live-checklist.md).** Every item must pass.
-2. **Obtain a `sk_live_*` key** (see above).
-3. **Replace your API key** in your integration configuration. No other code changes are needed -- the API surface is identical.
-4. **Verify the `X-API-Mode` header** in your first live response to confirm you are in the correct environment.
-5. **Monitor your first transactions** closely. Set up alerts for callback failures and unexpected error rates.
-
-Do not mix test and live keys in the same environment. Use environment variables or a configuration file to manage which key is active.
-
----
-
-## FAQ
-
-**Can I use test keys in production?**
-Technically yes, but test keys do not process real money. Your players would not be able to place real bets. Use test keys only for development and QA.
-
-**Do test and live environments share data?**
-No. Sessions, transactions, and player state are completely isolated between environments. A session created with a test key is not visible to a live key.
-
-**What happens if I exceed the test rate limit?**
-You receive an [E9001 `rate_limited`](./error-codes.md#rate-limiting-e9xxx) error with a `429` status code. Check the `X-RateLimit-Reset` header for when you can resume.
-
-**Can I reset my test environment?**
-Test sessions expire after 24 hours automatically. There is no manual reset mechanism. If you need to clear state for testing, create new sessions.
+- [Authentication](/get-started/authentication/) — API key format, rotation, security
+- [How a game round works](/get-started/how-a-round-works/) — full session lifecycle
+- [Integration walkthrough](/guides/integration/) — code path from registration to first round

@@ -93,7 +93,7 @@ Errors related to game session lifecycle and player state.
 |--------|--------------------------|------|----------------------------------------------------------|-------------------------------------------------------------------|
 | E3001  | `session_not_found`      | 404  | Session does not exist or belongs to a different operator. | Verify the `session_id`. Sessions are scoped to your API key.    |
 | E3002  | `session_expired`        | 410  | Session has expired. Sessions have a 24-hour lifetime.   | Create a new session via `POST /v1/sessions`.                    |
-| E3003  | `session_limit_exceeded` | 429  | Too many concurrent sessions. Test environment allows max 5. | Complete or expire existing sessions before creating new ones.   |
+| E3003  | `session_limit_exceeded` | 429  | Too many concurrent sessions for this operator. | Complete or expire existing sessions before creating new ones.   |
 | E3004  | `player_self_excluded`   | 403  | Player is on the self-exclusion list.                    | Do not allow this player to play. This is a regulatory requirement. |
 
 ---
@@ -118,8 +118,8 @@ Errors related to API key authentication, HMAC signature verification, and accou
 
 | Code   | Type                          | HTTP | Description                                              | Operator Action                                                   |
 |--------|-------------------------------|------|----------------------------------------------------------|-------------------------------------------------------------------|
-| E5001  | `callback_signature_invalid`  | 401  | HMAC signature verification failed on a callback request. | Verify you are using the correct `callback_secret` and signing the request body correctly. See the [signature verification guide](../integration/signature-verification.md). |
-| E5002  | `api_key_invalid`             | 401  | API key is not recognized.                               | Check that you are sending the correct key in the `Authorization` header. Keys are prefixed `sk_test_*` or `sk_live_*`. |
+| E5001  | `callback_signature_invalid`  | 401  | HMAC signature verification failed on a callback request. | Verify you are using the correct `callback_secret` and signing the request body correctly. See the [signature verification guide](/guides/signature-verification/). |
+| E5002  | `api_key_invalid`             | 401  | API key is not recognized.                               | Check that you are sending the correct key in the `Authorization` header. All operator keys are prefixed `sk_live_*`. |
 | E5003  | `api_key_expired`             | 401  | API key has expired.                                     | Generate a new API key in the operator cabinet under Settings > API Keys. |
 | E5004  | `scope_insufficient`          | 403  | This API key does not have permission for the requested operation. | Check the scopes assigned to your key. You may need a key with broader permissions. |
 | E5020  | `deletion_blocked`            | 409  | Account deletion is blocked (active sessions or pending transactions). | Resolve all pending operations before requesting deletion.       |

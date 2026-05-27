@@ -1,6 +1,6 @@
 ---
 title: "Authentication"
-description: "API keys, environment separation, scopes, rate limits."
+description: "API keys, rotation, rate limits, security best practices."
 ---
 
 Every request to the Machine API must include a Bearer token in the `Authorization` header:
@@ -11,16 +11,9 @@ Authorization: Bearer sk_live_a1b2c3d4e5f6...
 
 You obtain API keys from the operator dashboard at [app.aggregator.gg/api-keys](https://app.aggregator.gg/api-keys).
 
-## Key prefixes and environments
+## Key format
 
-| Prefix      | Environment | Purpose                                       |
-| ----------- | ----------- | --------------------------------------------- |
-| `sk_live_`  | Production  | Real-money sessions, production game catalog  |
-| `sk_test_`  | Test        | Sandbox sessions, test catalog, no real money |
-
-Production and test environments share the same API surface and base URL. The key prefix determines which logical environment the request executes in.
-
-See [Environments](/get-started/environments/) for the full isolation model.
+All operator API keys are prefixed `sk_live_*`. There is no separate sandbox or test key tier — your `sk_live_*` key is the same key you use for welcome-pack testing and for live customer traffic. See [Environments & testing](/get-started/environments/) for how welcome credits make pre-launch testing safe.
 
 ## Key rotation
 
@@ -52,4 +45,5 @@ API key scopes (`read`, `write`, `admin`) are in roadmap. Today all `sk_live_*` 
 - **Never commit keys to git.** Use environment variables or a secret manager (1Password, Vault, AWS Secrets Manager).
 - **Never expose `sk_live_*` keys in browser-side code.** This API is server-to-server only.
 - **Rotate on suspected compromise.** Revoke the old key immediately if you believe it leaked.
-- **Use `sk_test_*` for CI.** Real-money keys should never appear in test runs.
+- **Use a dedicated rotated key for CI/integration tests** rather than your production key. The cabinet lets you tag keys with names (e.g. `prod-main`, `ci-runner`) and revoke them independently.
+- **Treat welcome-pack traffic the same as paying traffic.** The platform does not distinguish them in the API — and neither should your code.
