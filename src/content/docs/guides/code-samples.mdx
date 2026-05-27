@@ -1,0 +1,653 @@
+---
+title: "Code samples"
+description: "Copy-paste snippets for the five essential Machine API operations in TypeScript, PHP, and Python."
+---
+
+import { Tabs, TabItem, Aside, LinkCard } from '@astrojs/starlight/components';
+
+The five operations every operator integration needs, in the three languages we ship hand-curated samples for. **TypeScript**, **PHP**, and **Python** — chosen because they cover ~85% of incumbent B2B casino backend stacks. For Java, Go, C#, Ruby, Kotlin, Rust — generate clients from our [OpenAPI spec](https://github.com/aggregator-gg/docs/blob/main/openapi/aggregator.yaml) with [`openapi-generator-cli`](https://openapi-generator.tech/).
+
+<Aside type="note">
+All samples assume environment variables `AGGREGATOR_API_KEY` (your `sk_live_*` key) and `AGGREGATOR_CALLBACK_SECRET` (HMAC secret). Never hard-code these in source.
+</Aside>
+
+## 1. List games (first request)
+
+The minimal "is auth working" call. List a single page of games for your enabled providers.
+
+<Tabs syncKey="lang">
+
+<TabItem label="TypeScript">
+
+```ts
+const res = await fetch(
+  "https://api.aggregator.gg/v1/games?per_page=10",
+  {
+    headers: { Authorization: `Bearer ${process.env.AGGREGATOR_API_KEY}` },
+  },
+);
+
+if (!res.ok) {
+  throw new Error(`list games failed: ${res.status} ${await res.text()}`);
+}
+
+const { games, total } = await res.json();
+console.log(`Got ${games.length} of ${total} games`);
+```
+
+</TabItem>
+
+<TabItem label="PHP">
+
+```php
+<?php
+
+$ch = curl_init('https://api.aggregator.gg/v1/games?per_page=10');
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer ' . getenv('AGGREGATOR_API_KEY'),
+    ],
+]);
+$body = curl_exec($ch);
+$status = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+curl_close($ch);
+
+if ($status < 200 || $status >= 300) {
+    throw new RuntimeException("list games failed: $status $body");
+}
+
+$payload = json_decode($body, true);
+printf("Got %d of %d games\n", count($payload['games']), $payload['total']);
+```
+
+</TabItem>
+
+<TabItem label="Python">
+
+```python
+import os
+import httpx
+
+resp = httpx.get(
+    "https://api.aggregator.gg/v1/games",
+    params={"per_page": 10},
+    headers={"Authorization": f"Bearer {os.environ['AGGREGATOR_API_KEY']}"},
+    timeout=10.0,
+)
+resp.raise_for_status()
+payload = resp.json()
+print(f"Got {len(payload['games'])} of {payload['total']} games")
+```
+
+</TabItem>
+
+</Tabs>
+
+---
+
+## 2. Create a session
+
+Real-money game launch. Requires an `Idempotency-Key` header — see [Idempotency](/guides/idempotency/) for the why.
+
+<Tabs syncKey="lang">
+
+<TabItem label="TypeScript">
+
+```ts
+import { randomUUID } from "node:crypto";
+
+const idempotencyKey = `launch-${playerId}-${spinId}`;  // stable for retries
+
+const res = await fetch("https://api.aggregator.gg/v1/sessions", {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${process.env.AGGREGATOR_API_KEY}`,
+    "Idempotency-Key": idempotencyKey,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    game_id: "d4f7a2b1-3c8e-4f5a-9b6d-1e2f3a4b5c6d",
+    player_id: playerId,
+    balance: 10_000, // minor units — 100.00 EUR
+    currency: "EUR",
+    country: "DE",
+    lang: "de",
+    return_url: "https://your-casino.example/lobby",
+  }),
+});
+
+if (res.status === 402) {
+  throw new Error("operator wallet insufficient — top up credits");
+}
+if (!res.ok) {
+  throw new Error(`create session failed: ${res.status}`);
+}
+
+const { session_id, game_url, expires_in } = await res.json();
+// Redirect the player to game_url within `expires_in` seconds.
+```
+
+</TabItem>
+
+<TabItem label="PHP">
+
+```php
+<?php
+
+$idempotencyKey = "launch-{$playerId}-{$spinId}";
+
+$ch = curl_init('https://api.aggregator.gg/v1/sessions');
+curl_setopt_array($ch, [
+    CURLOPT_POST => true,
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer ' . getenv('AGGREGATOR_API_KEY'),
+        'Idempotency-Key: ' . $idempotencyKey,
+        'Content-Type: application/json',
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'game_id' => 'd4f7a2b1-3c8e-4f5a-9b6d-1e2f3a4b5c6d',
+        'player_id' => $playerId,
+        'balance' => 10000,            // minor units — 100.00 EUR
+        'currency' => 'EUR',
+        'country' => 'DE',
+        'lang' => 'de',
+        'return_url' => 'https://your-casino.example/lobby',
+    ]),
+]);
+$body = curl_exec($ch);
+$status = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+curl_close($ch);
+
+if ($status === 402) {
+    throw new RuntimeException('operator wallet insufficient — top up credits');
+}
+if ($status < 200 || $status >= 300) {
+    throw new RuntimeException("create session failed: $status $body");
+}
+
+$session = json_decode($body, true);
+// Redirect the player to $session['game_url'] within $session['expires_in'] seconds.
+```
+
+</TabItem>
+
+<TabItem label="Python">
+
+```python
+import os
+import httpx
+
+idempotency_key = f"launch-{player_id}-{spin_id}"
+
+resp = httpx.post(
+    "https://api.aggregator.gg/v1/sessions",
+    headers={
+        "Authorization": f"Bearer {os.environ['AGGREGATOR_API_KEY']}",
+        "Idempotency-Key": idempotency_key,
+    },
+    json={
+        "game_id": "d4f7a2b1-3c8e-4f5a-9b6d-1e2f3a4b5c6d",
+        "player_id": player_id,
+        "balance": 10_000,           # minor units — 100.00 EUR
+        "currency": "EUR",
+        "country": "DE",
+        "lang": "de",
+        "return_url": "https://your-casino.example/lobby",
+    },
+    timeout=10.0,
+)
+
+if resp.status_code == 402:
+    raise RuntimeError("operator wallet insufficient — top up credits")
+resp.raise_for_status()
+
+session = resp.json()
+# Redirect player to session["game_url"] within session["expires_in"] seconds.
+```
+
+</TabItem>
+
+</Tabs>
+
+---
+
+## 3. Verify a callback signature
+
+The single highest-leverage snippet on this site. Copy verbatim. See [Signature verification](/guides/signature-verification/) for the full guide including replay-window checks.
+
+<Tabs syncKey="lang">
+
+<TabItem label="TypeScript">
+
+```ts
+import crypto from "node:crypto";
+
+export function verifyAggregatorSignature(
+  rawBody: Buffer,
+  signatureHeader: string,
+  timestampHeader: string,
+): boolean {
+  const ts = parseInt(timestampHeader, 10);
+  if (!Number.isFinite(ts)) return false;
+  if (Math.abs(Date.now() / 1000 - ts) > 900) return false;
+
+  const expected = crypto
+    .createHmac("sha256", process.env.AGGREGATOR_CALLBACK_SECRET!)
+    .update(`${ts}.${rawBody.toString("utf8")}`)
+    .digest("hex");
+
+  const provided = signatureHeader.replace(/^sha256=/, "");
+  if (expected.length !== provided.length) return false;
+
+  return crypto.timingSafeEqual(
+    Buffer.from(expected, "hex"),
+    Buffer.from(provided, "hex"),
+  );
+}
+```
+
+</TabItem>
+
+<TabItem label="PHP">
+
+```php
+<?php
+
+function verifyAggregatorSignature(
+    string $rawBody,
+    string $signatureHeader,
+    string $timestampHeader
+): bool {
+    if (!ctype_digit($timestampHeader)) return false;
+    $ts = (int) $timestampHeader;
+    if (abs(time() - $ts) > 900) return false;
+
+    $expected = hash_hmac(
+        'sha256',
+        $ts . '.' . $rawBody,
+        getenv('AGGREGATOR_CALLBACK_SECRET'),
+    );
+    $provided = preg_replace('/^sha256=/', '', $signatureHeader);
+    return hash_equals($expected, $provided);
+}
+```
+
+</TabItem>
+
+<TabItem label="Python">
+
+```python
+import hmac
+import hashlib
+import os
+import time
+
+
+def verify_aggregator_signature(
+    raw_body: bytes,
+    signature_header: str,
+    timestamp_header: str,
+) -> bool:
+    try:
+        ts = int(timestamp_header)
+    except ValueError:
+        return False
+    if abs(time.time() - ts) > 900:
+        return False
+
+    secret = os.environ["AGGREGATOR_CALLBACK_SECRET"].encode()
+    message = f"{ts}.".encode() + raw_body
+    expected = hmac.new(secret, message, hashlib.sha256).hexdigest()
+    provided = signature_header.removeprefix("sha256=")
+    return hmac.compare_digest(expected, provided)
+```
+
+</TabItem>
+
+</Tabs>
+
+<Aside type="danger">
+**Constant-time compare matters.** All three samples use `timingSafeEqual` / `hash_equals` / `hmac.compare_digest`. A plain `==` is a timing-attack vector.
+</Aside>
+
+---
+
+## 4. Handle a callback (full endpoint)
+
+Receive a bet/win callback, verify signature, debit/credit your wallet, respond with the new balance. Pseudo-wallet helpers (`debit`, `credit`) are placeholders for your real ledger code.
+
+<Tabs syncKey="lang">
+
+<TabItem label="TypeScript">
+
+```ts
+// Express
+import express from "express";
+
+const app = express();
+
+app.post(
+  "/aggregator/callback",
+  express.raw({ type: "application/json" }),  // raw body for HMAC
+  async (req, res) => {
+    const rawBody = req.body as Buffer;
+    const signature = req.header("X-Aggregator-Signature") ?? "";
+    const timestamp = req.header("X-Aggregator-Timestamp") ?? "";
+
+    if (!verifyAggregatorSignature(rawBody, signature, timestamp)) {
+      return res.status(401).json({ error: "invalid_signature" });
+    }
+
+    const event = JSON.parse(rawBody.toString("utf8"));
+    let newBalance: number;
+    try {
+      if (event.event === "bet") {
+        newBalance = await wallet.debit(event.player_id, event.amount, event.transaction_id);
+      } else if (event.event === "win") {
+        newBalance = await wallet.credit(event.player_id, event.amount, event.transaction_id);
+      } else {
+        return res.status(400).json({ error: "unknown_event" });
+      }
+    } catch (e) {
+      if (e.code === "INSUFFICIENT_BALANCE") {
+        return res.status(402).json({ error: "insufficient_balance" });
+      }
+      throw e;
+    }
+
+    res.json({ balance: newBalance });
+  },
+);
+```
+
+</TabItem>
+
+<TabItem label="PHP">
+
+```php
+<?php
+// Slim or vanilla PHP front controller
+
+$rawBody = file_get_contents('php://input');
+$signature = $_SERVER['HTTP_X_AGGREGATOR_SIGNATURE'] ?? '';
+$timestamp = $_SERVER['HTTP_X_AGGREGATOR_TIMESTAMP'] ?? '';
+
+if (!verifyAggregatorSignature($rawBody, $signature, $timestamp)) {
+    http_response_code(401);
+    echo json_encode(['error' => 'invalid_signature']);
+    exit;
+}
+
+$event = json_decode($rawBody, true);
+
+try {
+    if ($event['event'] === 'bet') {
+        $newBalance = $wallet->debit(
+            $event['player_id'],
+            $event['amount'],
+            $event['transaction_id'],
+        );
+    } elseif ($event['event'] === 'win') {
+        $newBalance = $wallet->credit(
+            $event['player_id'],
+            $event['amount'],
+            $event['transaction_id'],
+        );
+    } else {
+        http_response_code(400);
+        echo json_encode(['error' => 'unknown_event']);
+        exit;
+    }
+} catch (InsufficientBalanceException $e) {
+    http_response_code(402);
+    echo json_encode(['error' => 'insufficient_balance']);
+    exit;
+}
+
+header('Content-Type: application/json');
+echo json_encode(['balance' => $newBalance]);
+```
+
+</TabItem>
+
+<TabItem label="Python">
+
+```python
+# FastAPI
+from fastapi import FastAPI, Request, HTTPException
+
+app = FastAPI()
+
+
+@app.post("/aggregator/callback")
+async def aggregator_callback(request: Request):
+    raw_body = await request.body()
+    signature = request.headers.get("X-Aggregator-Signature", "")
+    timestamp = request.headers.get("X-Aggregator-Timestamp", "")
+
+    if not verify_aggregator_signature(raw_body, signature, timestamp):
+        raise HTTPException(401, "invalid_signature")
+
+    event = await request.json()
+    try:
+        if event["event"] == "bet":
+            new_balance = await wallet.debit(
+                event["player_id"], event["amount"], event["transaction_id"]
+            )
+        elif event["event"] == "win":
+            new_balance = await wallet.credit(
+                event["player_id"], event["amount"], event["transaction_id"]
+            )
+        else:
+            raise HTTPException(400, "unknown_event")
+    except InsufficientBalanceError:
+        raise HTTPException(402, "insufficient_balance")
+
+    return {"balance": new_balance}
+```
+
+</TabItem>
+
+</Tabs>
+
+---
+
+## 5. Structured error handling
+
+Every API error follows the `{ error: { code, message, request_id, details } }` envelope. See [Error codes](/resources/error-codes/) for the full code list.
+
+<Tabs syncKey="lang">
+
+<TabItem label="TypeScript">
+
+```ts
+async function callAggregator(path: string, init?: RequestInit) {
+  const res = await fetch(`https://api.aggregator.gg/v1${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${process.env.AGGREGATOR_API_KEY}`,
+      ...init?.headers,
+    },
+  });
+
+  if (res.ok) return res.json();
+
+  let payload;
+  try {
+    payload = await res.json();
+  } catch {
+    throw new AggregatorError(res.status, "E0000", "non_json_response", null);
+  }
+
+  throw new AggregatorError(
+    res.status,
+    payload.error?.code,
+    payload.error?.message,
+    payload.error?.request_id,
+  );
+}
+
+class AggregatorError extends Error {
+  constructor(
+    public httpStatus: number,
+    public code: string,
+    message: string,
+    public requestId: string | null,
+  ) {
+    super(`[${code}] ${message} (request_id=${requestId})`);
+  }
+}
+
+// Use:
+try {
+  await callAggregator("/sessions", { method: "POST", body: ... });
+} catch (e) {
+  if (e instanceof AggregatorError && e.code === "E0301") {
+    // Player self-excluded — show a soft message, not "API error"
+  } else {
+    throw e;
+  }
+}
+```
+
+</TabItem>
+
+<TabItem label="PHP">
+
+```php
+<?php
+
+class AggregatorException extends RuntimeException {
+    public function __construct(
+        public readonly int $httpStatus,
+        public readonly string $code,
+        string $message,
+        public readonly ?string $requestId,
+    ) {
+        parent::__construct("[$code] $message (request_id=$requestId)");
+    }
+}
+
+function callAggregator(string $path, array $opts = []): array {
+    $ch = curl_init('https://api.aggregator.gg/v1' . $path);
+    $headers = [
+        'Authorization: Bearer ' . getenv('AGGREGATOR_API_KEY'),
+        ...($opts['headers'] ?? []),
+    ];
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => $headers,
+        ...($opts['curl'] ?? []),
+    ]);
+    $body = curl_exec($ch);
+    $status = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    curl_close($ch);
+
+    if ($status >= 200 && $status < 300) {
+        return json_decode($body, true);
+    }
+
+    $payload = json_decode($body, true) ?: [];
+    $err = $payload['error'] ?? [];
+    throw new AggregatorException(
+        $status,
+        $err['code'] ?? 'E0000',
+        $err['message'] ?? $body,
+        $err['request_id'] ?? null,
+    );
+}
+
+// Use:
+try {
+    callAggregator('/sessions', ['curl' => [CURLOPT_POST => true, ...]]);
+} catch (AggregatorException $e) {
+    if ($e->code === 'E0301') {
+        // Player self-excluded
+    } else {
+        throw $e;
+    }
+}
+```
+
+</TabItem>
+
+<TabItem label="Python">
+
+```python
+import os
+import httpx
+
+
+class AggregatorError(Exception):
+    def __init__(self, http_status: int, code: str, message: str, request_id: str | None):
+        self.http_status = http_status
+        self.code = code
+        self.message = message
+        self.request_id = request_id
+        super().__init__(f"[{code}] {message} (request_id={request_id})")
+
+
+def call_aggregator(path: str, method: str = "GET", **kwargs) -> dict:
+    headers = {
+        "Authorization": f"Bearer {os.environ['AGGREGATOR_API_KEY']}",
+        **kwargs.pop("headers", {}),
+    }
+    resp = httpx.request(
+        method,
+        f"https://api.aggregator.gg/v1{path}",
+        headers=headers,
+        timeout=10.0,
+        **kwargs,
+    )
+
+    if resp.is_success:
+        return resp.json()
+
+    try:
+        payload = resp.json()
+    except ValueError:
+        raise AggregatorError(resp.status_code, "E0000", "non_json_response", None)
+
+    err = payload.get("error") or {}
+    raise AggregatorError(
+        resp.status_code,
+        err.get("code", "E0000"),
+        err.get("message", resp.text),
+        err.get("request_id"),
+    )
+
+
+# Use:
+try:
+    call_aggregator("/sessions", method="POST", json={...})
+except AggregatorError as e:
+    if e.code == "E0301":
+        # Player self-excluded
+        pass
+    else:
+        raise
+```
+
+</TabItem>
+
+</Tabs>
+
+---
+
+## Other languages
+
+For Java, Go, C#, Ruby, Kotlin, Rust — generate a client from the spec:
+
+```sh
+npx @openapitools/openapi-generator-cli generate \
+  -i https://raw.githubusercontent.com/aggregator-gg/docs/main/openapi/aggregator.yaml \
+  -g python  \  # or java, go, csharp, ruby, kotlin, rust, ...
+  -o ./aggregator-client
+```
+
+The generator supports 30+ languages. Output is a typed client with request/response models matching the spec exactly.
+
+<LinkCard title="OpenAPI spec (raw YAML)" href="https://github.com/aggregator-gg/docs/blob/main/openapi/aggregator.yaml" description="The single source of truth. Use as input to openapi-generator-cli." />
+<LinkCard title="Postman collection" href="/resources/postman/" description="Pre-built Postman collection — no code, just import and click." />
