@@ -15,9 +15,15 @@
 	font-weight: 700;
 	font-size: 0.8rem;
 	letter-spacing: 0.02em;
-	margin-left: 0.25rem;
+	margin-left: 0;
 	color: var(--sl-color-gray-2);
 	white-space: nowrap;
+}
+
+/* Starlight wraps the logo img + sr-only span in a flex container with
+ * gap. Shrink that gap so /API sits visually next to the wordmark.   */
+.site-title {
+	gap: 0.15rem !important;
 }
 
 /* The Aggregator brand palette — mirrors CabinetUI in the operator app. */
