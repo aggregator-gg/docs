@@ -45,13 +45,13 @@ Use demo sessions for marketing previews, lobby thumbnails, or showing a game in
 
 ## Rate limits
 
-Default rate limits per `sk_live_*` key:
+Default rate limits, evaluated in a 60-second sliding window:
 
-- **100 requests/second** sustained
-- **500 requests/second** burst (5-second window)
-- **10 failed authentication attempts/minute per IP** (brute-force protection)
+- **600 requests/minute per API key**
+- **3 000 requests/minute per operator account** (sum across all keys)
+- **100 failed authentication attempts/minute per IP** (brute-force protection)
 
-Exceeded limits return `429 Too Many Requests` with a `Retry-After` header.
+Exceeded limits return `429 Too Many Requests` with `X-RateLimit-*` headers and `Retry-After`. See [Authentication](/get-started/authentication/) for full header semantics.
 
 ## Read next
 

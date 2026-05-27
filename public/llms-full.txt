@@ -95,13 +95,13 @@ We recommend rotating production keys every 90 days.
 
 ## Rate limits
 
-Default rate limits per key:
+Default rate limits, evaluated in a 60-second sliding window:
 
-- **100 requests/second** sustained
-- **500 requests/second** burst (5-second window)
-- **10 failed authentication attempts/minute per IP** (brute-force protection)
+- **600 requests/minute per API key**
+- **3 000 requests/minute per operator account** (sum across all keys)
+- **100 failed authentication attempts/minute per IP** (brute-force protection)
 
-Exceeded limits return `429 Too Many Requests` with a `Retry-After` header.
+Exceeded limits return `429 Too Many Requests` with `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers. The `X-RateLimit-Reset` value is a Unix timestamp — wait until then, or use the `Retry-After` header on the response.
 
 ## Scopes (coming soon)
 
@@ -161,13 +161,13 @@ Use demo sessions for marketing previews, lobby thumbnails, or showing a game in
 
 ## Rate limits
 
-Default rate limits per `sk_live_*` key:
+Default rate limits, evaluated in a 60-second sliding window:
 
-- **100 requests/second** sustained
-- **500 requests/second** burst (5-second window)
-- **10 failed authentication attempts/minute per IP** (brute-force protection)
+- **600 requests/minute per API key**
+- **3 000 requests/minute per operator account** (sum across all keys)
+- **100 failed authentication attempts/minute per IP** (brute-force protection)
 
-Exceeded limits return `429 Too Many Requests` with a `Retry-After` header.
+Exceeded limits return `429 Too Many Requests` with `X-RateLimit-*` headers and `Retry-After`. See [Authentication](/get-started/authentication/) for full header semantics.
 
 ## Read next
 
@@ -844,7 +844,9 @@ session = resp.json()
 
 ## 3. Verify a callback signature
 
-The single highest-leverage snippet on this site. Copy verbatim. See [Signature verification](/guides/signature-verification/) for the full guide including replay-window checks.
+The single highest-leverage snippet on this site. Copy verbatim. Full guide and replay-protection guidance: [Signature verification](/guides/signature-verification/).
+
+The platform sends an `X-SIGNATURE` header containing a hex-encoded HMAC-SHA256 digest of the raw body, keyed with your `callback_secret`. No `sha256=` prefix.
 
 **TypeScript:**
 
@@ -852,24 +854,21 @@ The single highest-leverage snippet on this site. Copy verbatim. See [Signature 
 
 export function verifyAggregatorSignature(
   rawBody: Buffer,
-  signatureHeader: string,
-  timestampHeader: string,
+  signatureHeader: string | undefined,
 ): boolean {
-  const ts = parseInt(timestampHeader, 10);
-  if (!Number.isFinite(ts)) return false;
-  if (Math.abs(Date.now() / 1000 - ts) > 900) return false;
+  if (!signatureHeader) return false;
 
   const expected = crypto
     .createHmac("sha256", process.env.AGGREGATOR_CALLBACK_SECRET!)
-    .update(`${ts}.${rawBody.toString("utf8")}`)
+    .update(rawBody)
     .digest("hex");
 
-  const provided = signatureHeader.replace(/^sha256=/, "");
-  if (expected.length !== provided.length) return false;
+  // Guard against Node's timingSafeEqual throwing on length mismatch.
+  if (expected.length !== signatureHeader.length) return false;
 
   return crypto.timingSafeEqual(
     Buffer.from(expected, "hex"),
-    Buffer.from(provided, "hex"),
+    Buffer.from(signatureHeader, "hex"),
   );
 }
 ```
@@ -879,22 +878,12 @@ export function verifyAggregatorSignature(
 ```php
 <?php
 
-function verifyAggregatorSignature(
-    string $rawBody,
-    string $signatureHeader,
-    string $timestampHeader
-): bool {
-    if (!ctype_digit($timestampHeader)) return false;
-    $ts = (int) $timestampHeader;
-    if (abs(time() - $ts) > 900) return false;
-
-    $expected = hash_hmac(
-        'sha256',
-        $ts . '.' . $rawBody,
-        getenv('AGGREGATOR_CALLBACK_SECRET'),
-    );
-    $provided = preg_replace('/^sha256=/', '', $signatureHeader);
-    return hash_equals($expected, $provided);
+function verifyAggregatorSignature(string $rawBody, ?string $signatureHeader): bool {
+    if ($signatureHeader === null || $signatureHeader === '') {
+        return false;
+    }
+    $expected = hash_hmac('sha256', $rawBody, getenv('AGGREGATOR_CALLBACK_SECRET'));
+    return hash_equals($expected, $signatureHeader);
 }
 ```
 
@@ -904,25 +893,13 @@ function verifyAggregatorSignature(
 import hmac
 import hashlib
 import os
-import time
 
-def verify_aggregator_signature(
-    raw_body: bytes,
-    signature_header: str,
-    timestamp_header: str,
-) -> bool:
-    try:
-        ts = int(timestamp_header)
-    except ValueError:
+def verify_aggregator_signature(raw_body: bytes, signature_header: str | None) -> bool:
+    if not signature_header:
         return False
-    if abs(time.time() - ts) > 900:
-        return False
-
     secret = os.environ["AGGREGATOR_CALLBACK_SECRET"].encode()
-    message = f"{ts}.".encode() + raw_body
-    expected = hmac.new(secret, message, hashlib.sha256).hexdigest()
-    provided = signature_header.removeprefix("sha256=")
-    return hmac.compare_digest(expected, provided)
+    expected = hmac.new(secret, raw_body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, signature_header)
 ```
 
 > 
@@ -946,10 +923,9 @@ app.post(
   express.raw({ type: "application/json" }),  // raw body for HMAC
   async (req, res) => {
     const rawBody = req.body as Buffer;
-    const signature = req.header("X-Aggregator-Signature") ?? "";
-    const timestamp = req.header("X-Aggregator-Timestamp") ?? "";
+    const signature = req.header("X-SIGNATURE");
 
-    if (!verifyAggregatorSignature(rawBody, signature, timestamp)) {
+    if (!verifyAggregatorSignature(rawBody, signature)) {
       return res.status(401).json({ error: "invalid_signature" });
     }
 
@@ -982,10 +958,9 @@ app.post(
 // Slim or vanilla PHP front controller
 
 $rawBody = file_get_contents('php://input');
-$signature = $_SERVER['HTTP_X_AGGREGATOR_SIGNATURE'] ?? '';
-$timestamp = $_SERVER['HTTP_X_AGGREGATOR_TIMESTAMP'] ?? '';
+$signature = $_SERVER['HTTP_X_SIGNATURE'] ?? null;
 
-if (!verifyAggregatorSignature($rawBody, $signature, $timestamp)) {
+if (!verifyAggregatorSignature($rawBody, $signature)) {
     http_response_code(401);
     echo json_encode(['error' => 'invalid_signature']);
     exit;
@@ -1032,10 +1007,9 @@ app = FastAPI()
 @app.post("/aggregator/callback")
 async def aggregator_callback(request: Request):
     raw_body = await request.body()
-    signature = request.headers.get("X-Aggregator-Signature", "")
-    timestamp = request.headers.get("X-Aggregator-Timestamp", "")
+    signature = request.headers.get("X-SIGNATURE")
 
-    if not verify_aggregator_signature(raw_body, signature, timestamp):
+    if not verify_aggregator_signature(raw_body, signature):
         raise HTTPException(401, "invalid_signature")
 
     event = await request.json()
@@ -1714,10 +1688,10 @@ Complete every item before switching from test mode to live traffic.
 
 <!-- guides/signature-verification -->
 
-Every wallet callback delivered by The Aggregator includes an HMAC-SHA256 signature in the `X-Aggregator-Signature` header. **You must verify the signature before debiting or crediting any player wallet.** Skipping verification is the #1 fraud vector in B2B gaming.
+Every wallet callback delivered by The Aggregator includes an HMAC-SHA256 signature in the `X-SIGNATURE` header. **You must verify the signature before debiting or crediting any player wallet.** Skipping verification is the #1 fraud vector in B2B gaming.
 
 > 
-Copy these snippets verbatim into your integration. The HMAC verification step protects real money. A bug here means an attacker who learns your operator's IP or a single legit callback shape can mint arbitrary credits.
+Copy these snippets verbatim into your integration. The HMAC verification step protects real money. A bug here means an attacker who learns your operator's callback URL can mint arbitrary credits.
 
 ## What you receive
 
@@ -1725,19 +1699,19 @@ Copy these snippets verbatim into your integration. The HMAC verification step p
 POST /your/callback-url HTTP/1.1
 Host: your-server.example.com
 Content-Type: application/json
-X-Aggregator-Signature: sha256=8b1a9953c4611296a827abf8c47804d7e8c8e8c8e8c8e8c8e8c8e8c8e8c8e8c8
-X-Aggregator-Timestamp: 1716748800
+X-SIGNATURE: 8b1a9953c4611296a827abf8c47804d7e8c8e8c8e8c8e8c8e8c8e8c8e8c8e8c8
 
-{"event":"bet","session_id":"...","amount":"1.50","currency":"EUR",...}
+{"transaction_id":"tx_bet_001","type":"bet","session_id":"...","amount":500,"currency":"EUR",...}
 ```
+
+The value of `X-SIGNATURE` is a lowercase hex-encoded HMAC-SHA256 digest. No `sha256=` prefix, no separator — just the raw 64-character hex string.
 
 ## What you compute
 
-1. Take the **raw request body bytes** (do not re-serialise the JSON — re-serialisation changes whitespace)
-2. Concatenate: `f"{timestamp}.{raw_body}"`
-3. HMAC-SHA256 with your operator's `callback_secret` (set in the cabinet)
-4. Hex-encode the digest
-5. Constant-time compare with the value after `sha256=` in the header
+1. Take the **raw request body bytes** (do not re-serialise the JSON — re-serialisation changes whitespace and breaks the signature)
+2. HMAC-SHA256 with your operator's `callback_secret` (set in the cabinet under **API Keys**)
+3. Hex-encode the digest (lowercase)
+4. Constant-time compare with the value in the `X-SIGNATURE` header
 
 ## Snippets
 
@@ -1749,26 +1723,23 @@ const SECRET = process.env.AGGREGATOR_CALLBACK_SECRET!;
 
 export function verifyAggregatorSignature(
   rawBody: Buffer,
-  signatureHeader: string,
-  timestampHeader: string,
+  signatureHeader: string | undefined,
 ): boolean {
-  // Reject callbacks older than 15 minutes (replay protection)
-  const ts = parseInt(timestampHeader, 10);
-  if (!Number.isFinite(ts)) return false;
-  const skewSeconds = Math.abs(Date.now() / 1000 - ts);
-  if (skewSeconds > 900) return false;
+  if (!signatureHeader) return false;
 
   const expected = crypto
     .createHmac("sha256", SECRET)
-    .update(`${ts}.${rawBody.toString("utf8")}`)
+    .update(rawBody)
     .digest("hex");
 
-  const provided = signatureHeader.replace(/^sha256=/, "");
-  if (expected.length !== provided.length) return false;
+  // Node's crypto.timingSafeEqual throws when buffer lengths differ.
+  // Guard with a length check so a missing/truncated header returns false
+  // instead of crashing the request handler.
+  if (expected.length !== signatureHeader.length) return false;
 
   return crypto.timingSafeEqual(
     Buffer.from(expected, "hex"),
-    Buffer.from(provided, "hex"),
+    Buffer.from(signatureHeader, "hex"),
   );
 }
 ```
@@ -1778,29 +1749,19 @@ export function verifyAggregatorSignature(
 ```php
 <?php
 
-function verifyAggregatorSignature(
-    string $rawBody,
-    string $signatureHeader,
-    string $timestampHeader
-): bool {
+function verifyAggregatorSignature(string $rawBody, ?string $signatureHeader): bool {
+    if ($signatureHeader === null || $signatureHeader === '') {
+        return false;
+    }
+
     $secret = getenv('AGGREGATOR_CALLBACK_SECRET');
     if ($secret === false) {
         throw new RuntimeException('AGGREGATOR_CALLBACK_SECRET is not set');
     }
 
-    // Reject callbacks older than 15 minutes (replay protection)
-    if (!ctype_digit($timestampHeader)) {
-        return false;
-    }
-    $ts = (int) $timestampHeader;
-    if (abs(time() - $ts) > 900) {
-        return false;
-    }
-
-    $expected = hash_hmac('sha256', $ts . '.' . $rawBody, $secret);
-    $provided = preg_replace('/^sha256=/', '', $signatureHeader);
-
-    return hash_equals($expected, $provided);
+    $expected = hash_hmac('sha256', $rawBody, $secret);
+    // hash_equals is length-safe and constant-time.
+    return hash_equals($expected, $signatureHeader);
 }
 ```
 
@@ -1810,42 +1771,39 @@ function verifyAggregatorSignature(
 import hmac
 import hashlib
 import os
-import time
 
-def verify_aggregator_signature(
-    raw_body: bytes,
-    signature_header: str,
-    timestamp_header: str,
-) -> bool:
+def verify_aggregator_signature(raw_body: bytes, signature_header: str | None) -> bool:
+    if not signature_header:
+        return False
+
     secret = os.environ["AGGREGATOR_CALLBACK_SECRET"].encode()
-
-    # Reject callbacks older than 15 minutes (replay protection)
-    try:
-        ts = int(timestamp_header)
-    except ValueError:
-        return False
-    if abs(time.time() - ts) > 900:
-        return False
-
-    message = f"{ts}.".encode() + raw_body
-    expected = hmac.new(secret, message, hashlib.sha256).hexdigest()
-    provided = signature_header.removeprefix("sha256=")
-
-    return hmac.compare_digest(expected, provided)
+    expected = hmac.new(secret, raw_body, hashlib.sha256).hexdigest()
+    # hmac.compare_digest is length-safe and constant-time.
+    return hmac.compare_digest(expected, signature_header)
 ```
 
 ## Common mistakes
 
 | Mistake | Symptom | Fix |
 |---|---|---|
-| Re-serialising the JSON before HMAC | Signature always invalid even when key is correct | Use the **raw bytes** of the request body; do not `json.loads()` then `json.dumps()` |
-| String comparison instead of constant-time | Timing-attack vulnerability | Use `crypto.timingSafeEqual` / `hash_equals` / `hmac.compare_digest` |
-| Forgetting the timestamp window | Replay attacks succeed indefinitely | Reject if `\|now - timestamp\| > 900s` |
-| Using `sk_live_*` API key as the secret | Always fails — wrong secret | The `callback_secret` is separate; find it in cabinet → API Keys → Webhook secret |
+| Re-serialising the JSON before HMAC | Signature always invalid even when secret is correct | Use the **raw bytes** of the request body; do not `json.loads()` then `json.dumps()` |
+| String comparison instead of constant-time | Timing-attack vulnerability | Use `crypto.timingSafeEqual` (with length check) / `hash_equals` / `hmac.compare_digest` |
+| Skipping the length check in Node | Uncaught exception → 500 → retry storm when an unsigned request hits the endpoint | Always compare lengths before calling `timingSafeEqual` (PHP and Python primitives handle this automatically) |
+| Using `sk_live_*` API key as the secret | Always fails — wrong secret | The `callback_secret` is separate; find it in cabinet → **API Keys** → **Callback secret** |
+
+## Replay protection
+
+The Aggregator does **not** emit a timestamp header on outbound callbacks. The platform's replay defence is **idempotency at the transaction layer**, not signature-level timestamps:
+
+- Every callback body includes a unique `transaction_id`. **Persist every `transaction_id` you have processed.** If a callback arrives with a `transaction_id` you have already credited/debited, return the original response without modifying the player balance.
+- A replayed callback therefore cannot double-charge the player even if an attacker captures and re-sends it — your dedup logic catches it before any wallet movement.
+- The full retry-and-idempotency semantics are documented in [Wallet callbacks](/guides/wallet-callbacks/) and [Idempotency](/guides/idempotency/).
+
+This is the industry-standard pattern for iGaming aggregators (where the canonical anti-replay token is the transaction ID, signed inside the body, not a separate timestamp header). Stripe-style timestamp+signature schemes are for one-shot webhooks (subscription created, payment captured), not for high-frequency money-path callbacks where idempotency is the natural defence.
 
 ## Test your implementation
 
-Use the sandbox to verify your signature check rejects tampered payloads before going live. See [Testing in sandbox](/guides/testing-sandbox/).
+Use welcome credits in production to verify your signature check rejects tampered payloads before going live. See [Testing your integration](/guides/testing-sandbox/).
 
 ---
 
@@ -1960,10 +1918,10 @@ Run these in order during integration. Each step exercises a distinct money-path
 
 ### 2. Callback signature verification — both happy path and tampered
 
-- Trigger a real spin in the launched game. The provider emits a `bet` callback that arrives at your `callback_url` with an `X-Aggregator-Signature` header.
+- Trigger a real spin in the launched game. The provider emits a `bet` callback that arrives at your `callback_url` with an `X-SIGNATURE` header.
 - Confirm your [signature verification](/guides/signature-verification/) returns `200` on legitimate callbacks.
 - **Tamper-test your verifier.** Take a captured legitimate callback, change one byte in the body, replay it to your endpoint. You must reject it with non-2xx. If your code accepts the tampered version, your signature check is broken and money loss is a question of when, not if.
-- **Replay-test.** Capture a legitimate callback and replay it 30 minutes later. The platform-side replay window rejects it (15-minute max age), but your own verification should also reject it — defense in depth.
+- **Replay-test.** Capture a legitimate callback and re-send it. Your own `transaction_id` dedup (Idempotency guide) must short-circuit the replay without any wallet movement. The platform does not enforce a signature-timestamp replay window — your dedup IS the defence.
 
 ### 3. Idempotency
 
@@ -2408,7 +2366,7 @@ Errors related to the affiliate/referral program.
 
 | Code   | Type           | HTTP | Description                                              | Operator Action                                                   |
 |--------|----------------|------|----------------------------------------------------------|-------------------------------------------------------------------|
-| E9001  | `rate_limited`  | 429  | Too many requests. You have exceeded the per-key rate limit. | Check the `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` response headers. **Test keys**: 60 requests/minute. **Live keys**: 600 requests/minute. Implement exponential backoff. |
+| E9001  | `rate_limited`  | 429  | Too many requests. You have exceeded the per-key or per-operator rate limit. | Check the `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` response headers. Defaults: **600 req/min per key**, **3 000 req/min per operator account**. Implement exponential backoff. |
 
 ---
 
