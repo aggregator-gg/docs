@@ -215,7 +215,9 @@ session = resp.json()
 
 ## 3. Verify a callback signature
 
-The single highest-leverage snippet on this site. Copy verbatim. See [Signature verification](/guides/signature-verification/) for the full guide including replay-window checks.
+The single highest-leverage snippet on this site. Copy verbatim. Full guide and replay-protection guidance: [Signature verification](/guides/signature-verification/).
+
+The platform sends an `X-SIGNATURE` header containing a hex-encoded HMAC-SHA256 digest of the raw body, keyed with your `callback_secret`. No `sha256=` prefix.
 
 <Tabs syncKey="lang">
 
@@ -226,24 +228,21 @@ import crypto from "node:crypto";
 
 export function verifyAggregatorSignature(
   rawBody: Buffer,
-  signatureHeader: string,
-  timestampHeader: string,
+  signatureHeader: string | undefined,
 ): boolean {
-  const ts = parseInt(timestampHeader, 10);
-  if (!Number.isFinite(ts)) return false;
-  if (Math.abs(Date.now() / 1000 - ts) > 900) return false;
+  if (!signatureHeader) return false;
 
   const expected = crypto
     .createHmac("sha256", process.env.AGGREGATOR_CALLBACK_SECRET!)
-    .update(`${ts}.${rawBody.toString("utf8")}`)
+    .update(rawBody)
     .digest("hex");
 
-  const provided = signatureHeader.replace(/^sha256=/, "");
-  if (expected.length !== provided.length) return false;
+  // Guard against Node's timingSafeEqual throwing on length mismatch.
+  if (expected.length !== signatureHeader.length) return false;
 
   return crypto.timingSafeEqual(
     Buffer.from(expected, "hex"),
-    Buffer.from(provided, "hex"),
+    Buffer.from(signatureHeader, "hex"),
   );
 }
 ```
@@ -255,22 +254,12 @@ export function verifyAggregatorSignature(
 ```php
 <?php
 
-function verifyAggregatorSignature(
-    string $rawBody,
-    string $signatureHeader,
-    string $timestampHeader
-): bool {
-    if (!ctype_digit($timestampHeader)) return false;
-    $ts = (int) $timestampHeader;
-    if (abs(time() - $ts) > 900) return false;
-
-    $expected = hash_hmac(
-        'sha256',
-        $ts . '.' . $rawBody,
-        getenv('AGGREGATOR_CALLBACK_SECRET'),
-    );
-    $provided = preg_replace('/^sha256=/', '', $signatureHeader);
-    return hash_equals($expected, $provided);
+function verifyAggregatorSignature(string $rawBody, ?string $signatureHeader): bool {
+    if ($signatureHeader === null || $signatureHeader === '') {
+        return false;
+    }
+    $expected = hash_hmac('sha256', $rawBody, getenv('AGGREGATOR_CALLBACK_SECRET'));
+    return hash_equals($expected, $signatureHeader);
 }
 ```
 
@@ -282,26 +271,14 @@ function verifyAggregatorSignature(
 import hmac
 import hashlib
 import os
-import time
 
 
-def verify_aggregator_signature(
-    raw_body: bytes,
-    signature_header: str,
-    timestamp_header: str,
-) -> bool:
-    try:
-        ts = int(timestamp_header)
-    except ValueError:
+def verify_aggregator_signature(raw_body: bytes, signature_header: str | None) -> bool:
+    if not signature_header:
         return False
-    if abs(time.time() - ts) > 900:
-        return False
-
     secret = os.environ["AGGREGATOR_CALLBACK_SECRET"].encode()
-    message = f"{ts}.".encode() + raw_body
-    expected = hmac.new(secret, message, hashlib.sha256).hexdigest()
-    provided = signature_header.removeprefix("sha256=")
-    return hmac.compare_digest(expected, provided)
+    expected = hmac.new(secret, raw_body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, signature_header)
 ```
 
 </TabItem>
@@ -333,10 +310,9 @@ app.post(
   express.raw({ type: "application/json" }),  // raw body for HMAC
   async (req, res) => {
     const rawBody = req.body as Buffer;
-    const signature = req.header("X-Aggregator-Signature") ?? "";
-    const timestamp = req.header("X-Aggregator-Timestamp") ?? "";
+    const signature = req.header("X-SIGNATURE");
 
-    if (!verifyAggregatorSignature(rawBody, signature, timestamp)) {
+    if (!verifyAggregatorSignature(rawBody, signature)) {
       return res.status(401).json({ error: "invalid_signature" });
     }
 
@@ -371,10 +347,9 @@ app.post(
 // Slim or vanilla PHP front controller
 
 $rawBody = file_get_contents('php://input');
-$signature = $_SERVER['HTTP_X_AGGREGATOR_SIGNATURE'] ?? '';
-$timestamp = $_SERVER['HTTP_X_AGGREGATOR_TIMESTAMP'] ?? '';
+$signature = $_SERVER['HTTP_X_SIGNATURE'] ?? null;
 
-if (!verifyAggregatorSignature($rawBody, $signature, $timestamp)) {
+if (!verifyAggregatorSignature($rawBody, $signature)) {
     http_response_code(401);
     echo json_encode(['error' => 'invalid_signature']);
     exit;
@@ -424,10 +399,9 @@ app = FastAPI()
 @app.post("/aggregator/callback")
 async def aggregator_callback(request: Request):
     raw_body = await request.body()
-    signature = request.headers.get("X-Aggregator-Signature", "")
-    timestamp = request.headers.get("X-Aggregator-Timestamp", "")
+    signature = request.headers.get("X-SIGNATURE")
 
-    if not verify_aggregator_signature(raw_body, signature, timestamp):
+    if not verify_aggregator_signature(raw_body, signature):
         raise HTTPException(401, "invalid_signature")
 
     event = await request.json()
