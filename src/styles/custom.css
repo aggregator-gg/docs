@@ -1,11 +1,23 @@
 /* Wordmark logo sizing — the AGGREGATOR.GG mark is a very wide
  * (1359×117 ≈ 11.6:1) wordmark, so without an explicit height it would
- * fill the entire sidebar. Cap header logo at ~1.75rem like a normal
- * site title. Aspect ratio preserved by `width: auto`. */
+ * fill the entire sidebar. Cap header logo at ~1.1rem. Aspect ratio
+ * preserved by `width: auto`. */
 .site-title img {
-	height: 1.75rem;
+	height: 1.1rem;
 	width: auto;
 	max-width: 100%;
+}
+
+/* Append "/ API" suffix next to the wordmark to identify this surface
+ * (mirrors stripe.com/docs's "Stripe API" header pattern). */
+.site-title::after {
+	content: "/ API";
+	font-weight: 700;
+	font-size: 0.9rem;
+	letter-spacing: 0.02em;
+	margin-left: 0.5rem;
+	color: var(--sl-color-gray-2);
+	white-space: nowrap;
 }
 
 /* The Aggregator brand palette — mirrors CabinetUI in the operator app. */
