@@ -16,10 +16,12 @@ export default defineConfig({
 			title: 'The Aggregator',
 			description: 'Public API documentation for The Aggregator — B2B game aggregation platform.',
 			logo: {
-				src: './src/assets/logo.svg',
-				// Wordmark already includes "AGGREGATOR" text, so replace the
-				// title to avoid duplicate branding. Logo uses currentColor so
-				// it inherits the active theme.
+				// Two variants because Starlight renders the logo as <img>,
+				// not inline <svg> — so the SVG's `currentColor` doesn't see
+				// the page text color. Light theme = navy wordmark, dark
+				// theme = white wordmark. Sizing constrained via custom.css.
+				light: './src/assets/logo-light.svg',
+				dark: './src/assets/logo-dark.svg',
 				replacesTitle: true,
 			},
 			social: [
