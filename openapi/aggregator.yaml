@@ -211,6 +211,9 @@ paths:
                 game_id:
                   type: string
                   format: uuid
+                  description: |
+                    The Aggregator catalog game UUID — the `id` from
+                    `GET /v1/games`. NOT the provider's `provider_game_id`.
                 lang:
                   type: string
                   pattern: '^[a-z]{2}$'
@@ -404,8 +407,14 @@ components:
         id:
           type: string
           format: uuid
+          description: |
+            The Aggregator catalog UUID. Pass THIS as `game_id` when creating a
+            real or demo session.
         provider_game_id:
           type: string
+          description: |
+            The provider's own game code. For display/reference only — do NOT
+            use it to create sessions (use `id`).
         provider_code:
           type: string
           example: truelabs
@@ -465,6 +474,10 @@ components:
         game_id:
           type: string
           format: uuid
+          description: |
+            The Aggregator catalog game UUID — the `id` field returned by
+            `GET /v1/games`. This is NOT the provider's own game code
+            (`provider_game_id`); always pass The Aggregator `id`.
         player_id:
           type: string
           maxLength: 128
@@ -528,6 +541,7 @@ components:
         game_id:
           type: string
           format: uuid
+          description: The Aggregator catalog game UUID (matches `Game.id`).
         provider_code:
           type: string
         player_id:
