@@ -21,7 +21,7 @@ If you are looking for the cabinet UI, the analytics dashboard, or the affiliate
 - **Provider integration normalisation** — each provider's launch protocol, callback shape, and signature scheme is translated into one canonical contract.
 - **Game catalog deduplication** — same game across multiple providers surfaces once.
 - **Session state** — open, paused, expired, settled.
-- **Callback routing + replay protection** — HMAC verification, IP allowlists per provider, 15-minute timestamp window.
+- **Callback routing + replay protection** — HMAC verification, provider-side checks, and transaction-level idempotency using the signed `transaction_id`.
 - **Financial ledger** — immutable, append-only, reconciliation tooling included.
 - **Compliance gates** — self-exclusion, GeoIP jurisdiction blocking, license checks (fail-closed by default).
 

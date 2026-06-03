@@ -17,7 +17,7 @@ sequenceDiagram
     participant Provider
 
     Player->>Operator: Opens game lobby
-    Operator->>Aggregator: POST /v1/sessions (game_id, player_id, balance)
+    Operator->>Aggregator: POST /v1/sessions (Idempotency-Key, game_id, player_id, balance, currency, country)
     Aggregator->>Provider: Create session
     Provider-->>Aggregator: Session URL
     Aggregator-->>Operator: { session_id, game_url }
@@ -38,7 +38,7 @@ sequenceDiagram
 
 1. **Player opens your lobby.** Your front-end calls your backend with the game they want to play.
 
-2. **You create a session.** `POST /v1/sessions` with `game_id`, `player_id`, `balance`, and currency. The Aggregator returns `session_id` and `game_url`.
+2. **You create a session.** `POST /v1/sessions` with an `Idempotency-Key` header and `game_id`, `player_id`, `balance`, `currency`, and `country`. The Aggregator returns `session_id` and `game_url`.
 
 3. **You redirect the player.** The `game_url` is a short-lived (20-second) signed URL. Embed it in an iframe or redirect the browser.
 
@@ -53,7 +53,7 @@ sequenceDiagram
 ## Important constraints
 
 - **`game_url` expires in 20 seconds.** Create the session immediately before redirecting the player; don't pre-fetch hours in advance.
-- **Callbacks may arrive out-of-order** under network jitter. The Aggregator does best-effort ordering but cannot guarantee strict sequence. Idempotency-Key dedup is on you.
+- **Callbacks may arrive out-of-order** under network jitter. The Aggregator does best-effort ordering but cannot guarantee strict sequence. Callback dedup by `transaction_id` is on you.
 - **A session can have many bets and wins.** Slot games typically generate one bet and one win per spin; live casino games can interleave them differently.
 - **Failed callback (you return non-2xx) triggers retries** with exponential backoff. See [Wallet callbacks](/guides/wallet-callbacks/) for retry semantics.
 

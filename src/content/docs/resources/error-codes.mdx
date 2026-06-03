@@ -81,7 +81,7 @@ Errors related to game lookup and availability.
 |--------|-----------------------------|------|----------------------------------------------------------|-------------------------------------------------------------------|
 | E2001  | `game_not_found`            | 404  | Game ID does not exist or is not enabled for your account. | Verify the `game_id` against the catalog returned by `GET /v1/games`. |
 | E2002  | `game_not_enabled`          | 403  | Game exists in the catalog but is currently disabled.    | Choose a different game or contact support to enable it.          |
-| E2003  | `game_blocked_jurisdiction` | 403  | Game is not available in the player's jurisdiction.      | Do not offer this game to players in the blocked country. Check the `blocked_jurisdictions` field on the game object. |
+| E2003  | `game_blocked_jurisdiction` | 403  | Game is not available in the player's jurisdiction.      | Do not offer this game to players in the blocked country. Check the `blocked_countries` field on the game object. |
 
 ---
 

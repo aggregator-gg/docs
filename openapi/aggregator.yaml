@@ -91,6 +91,7 @@ paths:
             X-API-Mode: { $ref: '#/components/headers/XApiMode' }
             X-RateLimit-Limit: { $ref: '#/components/headers/RateLimitLimit' }
             X-RateLimit-Remaining: { $ref: '#/components/headers/RateLimitRemaining' }
+            X-RateLimit-Reset: { $ref: '#/components/headers/RateLimitReset' }
           content:
             application/json:
               schema:
@@ -154,6 +155,8 @@ paths:
       responses:
         '201':
           description: Session created.
+          headers:
+            X-Idempotent-Replayed: { $ref: '#/components/headers/XIdempotentReplayed' }
           content:
             application/json:
               schema:
@@ -195,18 +198,17 @@ paths:
       description: |
         Launch a demo game session. No real-money wallet involvement; no bet
         or win callbacks emitted. Useful for sandbox testing or
-        prospect-facing free-play surfaces.
+        prospect-facing free-play surfaces. Demo sessions are non-financial
+        and do not require an `Idempotency-Key` header.
       tags: [Sessions]
       operationId: createDemoSession
-      parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [game_id, lang]
+              required: [game_id]
               properties:
                 game_id:
                   type: string
@@ -214,13 +216,6 @@ paths:
                   description: |
                     The Aggregator catalog game UUID — the `id` from
                     `GET /v1/games`. NOT the provider's `provider_game_id`.
-                lang:
-                  type: string
-                  pattern: '^[a-z]{2}$'
-                  example: en
-                return_url:
-                  type: string
-                  format: uri
       responses:
         '201':
           description: Demo session created.
@@ -377,6 +372,14 @@ components:
     RateLimitRemaining:
       schema: { type: integer }
       description: Calls remaining in the current window.
+    RateLimitReset:
+      schema: { type: integer }
+      description: Unix timestamp when the current rate-limit window resets.
+    XIdempotentReplayed:
+      schema:
+        type: string
+        enum: ["true"]
+      description: Present when the response was served from the idempotency cache.
 
   responses:
     Unauthorized:
