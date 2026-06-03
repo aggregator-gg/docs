@@ -319,12 +319,15 @@ app.post(
     const event = JSON.parse(rawBody.toString("utf8"));
     let newBalance: number;
     try {
-      if (event.event === "bet") {
+      if (event.transaction_type === "bet") {
         newBalance = await wallet.debit(event.player_id, event.amount, event.transaction_id);
-      } else if (event.event === "win") {
+      } else if (event.transaction_type === "win") {
+        newBalance = await wallet.credit(event.player_id, event.amount, event.transaction_id);
+      } else if (event.transaction_type === "refund") {
+        // A refund reverses the round's original bet — credit it back.
         newBalance = await wallet.credit(event.player_id, event.amount, event.transaction_id);
       } else {
-        return res.status(400).json({ error: "unknown_event" });
+        return res.status(400).json({ error: "unknown_transaction_type" });
       }
     } catch (e) {
       if (e.code === "INSUFFICIENT_BALANCE") {
@@ -333,7 +336,8 @@ app.post(
       throw e;
     }
 
-    res.json({ balance: newBalance });
+    // The Aggregator requires balance + currency; player_id is echoed back.
+    res.json({ balance: newBalance, currency: event.currency, player_id: event.player_id });
   },
 );
 ```
@@ -358,13 +362,20 @@ if (!verifyAggregatorSignature($rawBody, $signature)) {
 $event = json_decode($rawBody, true);
 
 try {
-    if ($event['event'] === 'bet') {
+    if ($event['transaction_type'] === 'bet') {
         $newBalance = $wallet->debit(
             $event['player_id'],
             $event['amount'],
             $event['transaction_id'],
         );
-    } elseif ($event['event'] === 'win') {
+    } elseif ($event['transaction_type'] === 'win') {
+        $newBalance = $wallet->credit(
+            $event['player_id'],
+            $event['amount'],
+            $event['transaction_id'],
+        );
+    } elseif ($event['transaction_type'] === 'refund') {
+        // A refund reverses the round's original bet — credit it back.
         $newBalance = $wallet->credit(
             $event['player_id'],
             $event['amount'],
@@ -372,7 +383,7 @@ try {
         );
     } else {
         http_response_code(400);
-        echo json_encode(['error' => 'unknown_event']);
+        echo json_encode(['error' => 'unknown_transaction_type']);
         exit;
     }
 } catch (InsufficientBalanceException $e) {
@@ -382,7 +393,12 @@ try {
 }
 
 header('Content-Type: application/json');
-echo json_encode(['balance' => $newBalance]);
+// The Aggregator requires balance + currency; player_id is echoed back.
+echo json_encode([
+    'balance' => $newBalance,
+    'currency' => $event['currency'],
+    'player_id' => $event['player_id'],
+]);
 ```
 
 </TabItem>
@@ -406,20 +422,26 @@ async def aggregator_callback(request: Request):
 
     event = await request.json()
     try:
-        if event["event"] == "bet":
+        if event["transaction_type"] == "bet":
             new_balance = await wallet.debit(
                 event["player_id"], event["amount"], event["transaction_id"]
             )
-        elif event["event"] == "win":
+        elif event["transaction_type"] == "win":
+            new_balance = await wallet.credit(
+                event["player_id"], event["amount"], event["transaction_id"]
+            )
+        elif event["transaction_type"] == "refund":
+            # A refund reverses the round's original bet — credit it back.
             new_balance = await wallet.credit(
                 event["player_id"], event["amount"], event["transaction_id"]
             )
         else:
-            raise HTTPException(400, "unknown_event")
+            raise HTTPException(400, "unknown_transaction_type")
     except InsufficientBalanceError:
         raise HTTPException(402, "insufficient_balance")
 
-    return {"balance": new_balance}
+    # The Aggregator requires balance + currency; player_id is echoed back.
+    return {"balance": new_balance, "currency": event["currency"], "player_id": event["player_id"]}
 ```
 
 </TabItem>
