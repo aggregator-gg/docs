@@ -19,7 +19,7 @@ Host: your-server.example.com
 Content-Type: application/json
 X-SIGNATURE: 8b1a9953c4611296a827abf8c47804d7e8c8e8c8e8c8e8c8e8c8e8c8e8c8e8c8
 
-{"transaction_id":"tx_bet_001","type":"bet","session_id":"...","amount":500,"currency":"EUR",...}
+{"action":"BET","transaction_type":"bet","transaction_id":"tx_bet_001","amount":"5.00","currency":"EUR","player_id":"player_42","provider_code":"truelabs","game":"book-of-sun","game_id":"d4f7a2b1-3c8e-4f5a-9b6d-1e2f3a4b5c6d","round_id":"round_abc","finished":false,"session_id":"..."}
 ```
 
 The value of `X-SIGNATURE` is a lowercase hex-encoded HMAC-SHA256 digest. No `sha256=` prefix, no separator — just the raw 64-character hex string.
@@ -27,7 +27,7 @@ The value of `X-SIGNATURE` is a lowercase hex-encoded HMAC-SHA256 digest. No `sh
 ## What you compute
 
 1. Take the **raw request body bytes** (do not re-serialise the JSON — re-serialisation changes whitespace and breaks the signature)
-2. HMAC-SHA256 with your operator's `callback_secret` (set in the cabinet under **API Keys**)
+2. HMAC-SHA256 with your operator's `callback_secret` (set in the cabinet under **Game Providers -> Settings**)
 3. Hex-encode the digest (lowercase)
 4. Constant-time compare with the value in the `X-SIGNATURE` header
 
@@ -119,7 +119,7 @@ def verify_aggregator_signature(raw_body: bytes, signature_header: str | None) -
 | Re-serialising the JSON before HMAC | Signature always invalid even when secret is correct | Use the **raw bytes** of the request body; do not `json.loads()` then `json.dumps()` |
 | String comparison instead of constant-time | Timing-attack vulnerability | Use `crypto.timingSafeEqual` (with length check) / `hash_equals` / `hmac.compare_digest` |
 | Skipping the length check in Node | Uncaught exception → 500 → retry storm when an unsigned request hits the endpoint | Always compare lengths before calling `timingSafeEqual` (PHP and Python primitives handle this automatically) |
-| Using `sk_live_*` API key as the secret | Always fails — wrong secret | The `callback_secret` is separate; find it in cabinet → **API Keys** → **Callback secret** |
+| Using `sk_live_*` API key as the secret | Always fails — wrong secret | The `callback_secret` is separate; find it in cabinet -> **Game Providers** -> **Settings** |
 
 ## Replay protection
 

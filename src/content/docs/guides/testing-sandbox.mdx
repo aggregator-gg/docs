@@ -36,7 +36,7 @@ Run these in order during integration. Each step exercises a distinct money-path
 
 ### 3. Idempotency
 
-- POST the same `Idempotency-Key` twice to `/v1/sessions` with the same body. Confirm the second response is identical to the first and that you see `Idempotent-Replay: true` in headers.
+- POST the same `Idempotency-Key` twice to `/v1/sessions` with the same body. Confirm the second response is identical to the first and that you see `X-Idempotent-Replayed: true` in headers.
 - POST the same key with a *different* body. Confirm the API returns `409 Conflict`.
 - Pick a key, wait 25 hours, retry — confirm the API treats it as fresh (24h TTL).
 
@@ -55,7 +55,7 @@ Force each of these and confirm your handler does the right thing:
 | Slow callback response | Add `sleep(15)` to your callback handler temporarily | Platform marks callback `forwarded` after timeout, retries kick in |
 | 5xx callback response | Return `500` from your handler for one spin | Platform retries with exponential backoff per [retry policy](/guides/wallet-callbacks/) |
 | Insufficient balance | Set wallet to less than the next bet amount | Provider receives the rejection, player sees an error |
-| Self-excluded player | Mark the player self-excluded in your system before launching | `POST /v1/sessions` returns `403` with `E0301 player_self_excluded` |
+| Self-excluded player | Mark the player self-excluded in your system before launching | `POST /v1/sessions` returns `403` with `E3004 player_self_excluded` |
 | Expired session | Wait > 20 seconds before redirecting to `game_url` | Player sees provider error page; no wallet movement |
 
 ### 6. Going-live readiness

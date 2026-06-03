@@ -15,7 +15,7 @@ Authorization: Bearer sk_live_...
 Idempotency-Key: 8c8e8c8e-8c8e-4c8e-8c8e-8c8e8c8e8c8e
 Content-Type: application/json
 
-{"game_id": "...", "player_id": "...", "balance": 10000, "currency": "EUR"}
+{"game_id": "...", "player_id": "...", "balance": 10000, "currency": "EUR", "country": "DE"}
 ```
 
 - **First request:** processed normally, response cached
@@ -25,8 +25,10 @@ Content-Type: application/json
 ## Required on
 
 - `POST /v1/sessions`
-- `POST /v1/demo-sessions`
 - Any other `POST` documented as accepting idempotency keys
+
+`POST /v1/demo-sessions` does not move money and does not currently require
+`Idempotency-Key`.
 
 Idempotency on `GET` is intrinsic (queries don't mutate); the header has no effect there.
 
@@ -67,12 +69,12 @@ Two retries 100ms apart get different keys. You lose the protection.
 
 ## Response
 
-The Aggregator includes `Idempotent-Replay: true` in response headers when serving a cached response, so you can distinguish "this was idempotent" from "this was fresh":
+The Aggregator includes `X-Idempotent-Replayed: true` in response headers when serving a cached response, so you can distinguish "this was idempotent" from "this was fresh":
 
 ```http
 HTTP/1.1 200 OK
 Content-Type: application/json
-Idempotent-Replay: true
+X-Idempotent-Replayed: true
 
 {"session_id":"...","game_url":"..."}
 ```

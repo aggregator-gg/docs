@@ -119,9 +119,6 @@ const res = await fetch("https://api.aggregator.gg/v1/sessions", {
   }),
 });
 
-if (res.status === 402) {
-  throw new Error("operator wallet insufficient — top up credits");
-}
 if (!res.ok) {
   throw new Error(`create session failed: ${res.status}`);
 }
@@ -164,9 +161,6 @@ $body = curl_exec($ch);
 $status = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
 curl_close($ch);
 
-if ($status === 402) {
-    throw new RuntimeException('operator wallet insufficient — top up credits');
-}
 if ($status < 200 || $status >= 300) {
     throw new RuntimeException("create session failed: $status $body");
 }
@@ -205,8 +199,6 @@ resp = httpx.post(
     timeout=10.0,
 )
 
-if resp.status_code == 402:
-    raise RuntimeError("operator wallet insufficient — top up credits")
 resp.raise_for_status()
 
 session = resp.json()
@@ -509,7 +501,7 @@ class AggregatorError extends Error {
 try {
   await callAggregator("/sessions", { method: "POST", body: ... });
 } catch (e) {
-  if (e instanceof AggregatorError && e.code === "E0301") {
+  if (e instanceof AggregatorError && e.code === "E3004") {
     // Player self-excluded — show a soft message, not "API error"
   } else {
     throw e;
@@ -568,7 +560,7 @@ function callAggregator(string $path, array $opts = []): array {
 try {
     callAggregator('/sessions', ['curl' => [CURLOPT_POST => true, ...]]);
 } catch (AggregatorException $e) {
-    if ($e->code === 'E0301') {
+    if ($e->code === 'E3004') {
         // Player self-excluded
     } else {
         throw $e;
@@ -628,7 +620,7 @@ def call_aggregator(path: str, method: str = "GET", **kwargs) -> dict:
 try:
     call_aggregator("/sessions", method="POST", json={...})
 except AggregatorError as e:
-    if e.code == "E0301":
+    if e.code == "E3004":
         # Player self-excluded
         pass
     else:

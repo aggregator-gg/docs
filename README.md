@@ -23,6 +23,48 @@ If you are integrating with the API, **read [docs.aggregator.gg](https://docs.ag
 | `llms-full.txt` | https://docs.aggregator.gg/llms-full.txt | Single-file plain-text concatenation of every guide. ~100KB. Feed directly to LLM context if you want everything at once. |
 | OpenAPI spec | https://raw.githubusercontent.com/aggregator-gg/docs/main/openapi/aggregator.yaml | Machine-readable contract — the canonical source of truth for endpoints, schemas, examples. |
 
+### Cloudflare access for AI agents
+
+The docs site is intentionally public for human readers, search engines, and integration agents. `public/robots.txt` allows all crawlers, and the AI-readable entrypoints above are plain static assets. If an agent reports `403` from Cloudflare, the block is coming from the Cloudflare zone configuration, not from Astro/Starlight or this repo.
+
+Quick diagnosis:
+
+```bash
+curl -I https://docs.aggregator.gg/
+curl -I -A 'ClaudeBot/1.0 (+https://www.anthropic.com/)' https://docs.aggregator.gg/llms.txt
+curl -I -A 'Claude-User/1.0' https://docs.aggregator.gg/llms-full.txt
+```
+
+Expected result: all three return `200`. If the `ClaudeBot` or `Claude-User` checks return `403`, update Cloudflare:
+
+1. Go to `Security` -> `WAF` -> `Custom rules` for the `aggregator.gg` zone.
+2. Create a rule named `Allow AI agents on public docs`.
+3. Expression:
+
+   ```text
+   http.host eq "docs.aggregator.gg"
+   and (
+     cf.client.bot
+     or lower(http.user_agent) contains "claudebot"
+     or lower(http.user_agent) contains "claude-user"
+     or lower(http.user_agent) contains "anthropic"
+     or lower(http.user_agent) contains "codex"
+     or lower(http.user_agent) contains "openai"
+     or lower(http.user_agent) contains "gptbot"
+     or lower(http.user_agent) contains "chatgpt-user"
+     or lower(http.user_agent) contains "cursor"
+     or lower(http.user_agent) contains "anysphere"
+     or lower(http.user_agent) contains "perplexitybot"
+     or lower(http.user_agent) contains "ccbot"
+   )
+   ```
+
+4. Action: `Skip`.
+5. Skip options: `All Super Bot Fight Mode rules`, `All managed rules`, `User Agent Blocking`, and rate limiting rules if a docs-specific rate limit exists.
+6. Save, then rerun the `curl` checks above.
+
+If the zone uses Cloudflare **Bot Fight Mode** rather than **Super Bot Fight Mode**, WAF skip rules cannot bypass it. Disable Bot Fight Mode for the zone, move to Super Bot Fight Mode with the skip rule above, or add an IP Access rule for a known trusted client. Do not require browser challenges on `docs.aggregator.gg`, `/llms.txt`, `/llms-full.txt`, `/openapi/*`, or `/downloads/*`; those are integration surfaces for machine clients.
+
 ## Generating a client SDK
 
 For Java, Go, C#, Ruby, Kotlin, Rust — generate a typed client from the spec:
