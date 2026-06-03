@@ -89,7 +89,7 @@ curl -X GET "https://api.aggregator.gg/v1/games?per_page=5" \
 {
   "games": [
     {
-      "id": "game_abc123",
+      "id": "d4f7a2b1-3c8e-4f5a-9b6d-1e2f3a4b5c6d",
       "name": "Book of Sun",
       "provider_code": "truelabs",
       "game_type": "slots",
@@ -141,7 +141,7 @@ curl -X POST "https://api.aggregator.gg/v1/sessions" \
   -H "Idempotency-Key: launch-player-42-20260402-001" \
   -H "Content-Type: application/json" \
   -d '{
-    "game_id": "game_abc123",
+    "game_id": "d4f7a2b1-3c8e-4f5a-9b6d-1e2f3a4b5c6d",
     "player_id": "player_42",
     "balance": 10000,
     "currency": "EUR",
@@ -167,7 +167,7 @@ curl -X POST "https://api.aggregator.gg/v1/sessions" \
 
 ```typescript
 const session = await aggregator.sessions.create({
-  game_id: "game_abc123",
+  game_id: "d4f7a2b1-3c8e-4f5a-9b6d-1e2f3a4b5c6d",
   player_id: "player_42",
   balance: 10000,
   currency: "EUR",
@@ -186,7 +186,7 @@ same key explicitly:
 ```typescript
 const session = await aggregator.sessions.create(
   {
-    game_id: "game_abc123",
+    game_id: "d4f7a2b1-3c8e-4f5a-9b6d-1e2f3a4b5c6d",
     player_id: "player_42",
     balance: 10000,
     currency: "EUR",
@@ -200,6 +200,7 @@ const session = await aggregator.sessions.create(
 
 **Important details:**
 
+- `game_id` is **The Aggregator catalog UUID** — the `id` returned by `GET /v1/games`. It is **not** the provider's own game code (`provider_game_id`, for reference only). Always send The Aggregator `id`.
 - `balance` is in minor currency units (cents). 10000 = 100.00 EUR.
 - `country` determines jurisdiction rules. Games blocked in the player's country return a `403`.
 - `return_url` is where the player lands when they close the game. If omitted, the game closes to a blank page.
@@ -209,7 +210,7 @@ You can also launch demo sessions (no player credentials required):
 
 ```typescript
 const demo = await aggregator.sessions.createDemo({
-  game_id: "game_abc123",
+  game_id: "d4f7a2b1-3c8e-4f5a-9b6d-1e2f3a4b5c6d",
 });
 // demo.game_url opens the game in free-play mode
 ```
@@ -232,7 +233,7 @@ The Aggregator sends a `POST` request with a JSON body:
   "player_id": "player_42",
   "amount": 500,
   "currency": "EUR",
-  "game_id": "game_abc123",
+  "game_id": "d4f7a2b1-3c8e-4f5a-9b6d-1e2f3a4b5c6d",
   "provider_code": "truelabs",
   "round_id": "round_abc",
   "timestamp": "2026-03-30T12:00:00Z"
@@ -286,6 +287,8 @@ Your endpoint must return a JSON response with the player's updated balance:
   "balance": 9500
 }
 ```
+
+`balance` is the player's new balance in **minor units** (cents) — the same denomination as the bet/win `amount`.
 
 **Error responses:**
 

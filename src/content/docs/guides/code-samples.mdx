@@ -107,6 +107,8 @@ const res = await fetch("https://api.aggregator.gg/v1/sessions", {
     "Content-Type": "application/json",
   },
   body: JSON.stringify({
+    // The Aggregator catalog UUID (the `id` from GET /v1/games) — NOT the
+    // provider's own game code (provider_game_id).
     game_id: "d4f7a2b1-3c8e-4f5a-9b6d-1e2f3a4b5c6d",
     player_id: playerId,
     balance: 10_000, // minor units — 100.00 EUR
@@ -147,6 +149,8 @@ curl_setopt_array($ch, [
         'Content-Type: application/json',
     ],
     CURLOPT_POSTFIELDS => json_encode([
+        // The Aggregator catalog UUID (the `id` from GET /v1/games) — NOT the
+        // provider's own game code (provider_game_id).
         'game_id' => 'd4f7a2b1-3c8e-4f5a-9b6d-1e2f3a4b5c6d',
         'player_id' => $playerId,
         'balance' => 10000,            // minor units — 100.00 EUR
@@ -188,6 +192,8 @@ resp = httpx.post(
         "Idempotency-Key": idempotency_key,
     },
     json={
+        # The Aggregator catalog UUID (the `id` from GET /v1/games) — NOT the
+        # provider's own game code (provider_game_id).
         "game_id": "d4f7a2b1-3c8e-4f5a-9b6d-1e2f3a4b5c6d",
         "player_id": player_id,
         "balance": 10_000,           # minor units — 100.00 EUR
@@ -337,6 +343,7 @@ app.post(
     }
 
     // The Aggregator requires balance + currency; player_id is echoed back.
+    // balance is the player's NEW balance in minor units (cents).
     res.json({ balance: newBalance, currency: event.currency, player_id: event.player_id });
   },
 );
@@ -394,6 +401,7 @@ try {
 
 header('Content-Type: application/json');
 // The Aggregator requires balance + currency; player_id is echoed back.
+// balance is the player's NEW balance in minor units (cents).
 echo json_encode([
     'balance' => $newBalance,
     'currency' => $event['currency'],
@@ -441,6 +449,7 @@ async def aggregator_callback(request: Request):
         raise HTTPException(402, "insufficient_balance")
 
     # The Aggregator requires balance + currency; player_id is echoed back.
+    # balance is the player's NEW balance in minor units (cents).
     return {"balance": new_balance, "currency": event["currency"], "player_id": event["player_id"]}
 ```
 
