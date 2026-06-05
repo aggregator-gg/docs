@@ -84,6 +84,15 @@ paths:
         - name: per_page
           in: query
           schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+        - name: currency
+          in: query
+          schema: { type: string, minLength: 3, maxLength: 3, example: EUR }
+          description: |
+            Filter to games playable in this ISO-4217 currency. A game matches
+            when the currency is in its effective `supported_currencies` (the
+            game's own list if set, else the provider default). Use this to build
+            a storefront that never shows a player a game their wallet currency
+            cannot open.
       responses:
         '200':
           description: Page of games.
@@ -130,6 +139,27 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /providers/registry:
+    get:
+      summary: List registered providers
+      description: |
+        List the providers registered on the platform with their effective
+        `supported_currencies`. Use this to learn provider-level currency support
+        before fetching games, so you can filter your storefront and avoid
+        launch-time dead-ends for player wallet currencies a provider cannot
+        settle. Game-level support (`GET /v1/games`) narrows this when a game
+        declares its own list.
+      tags: [Providers]
+      operationId: listProviderRegistry
+      responses:
+        '200':
+          description: The provider registry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderRegistry'
         '401': { $ref: '#/components/responses/Unauthorized' }
 
   /sessions:
@@ -458,6 +488,18 @@ components:
         release_date:
           type: string
           format: date
+        supported_currencies:
+          type: array
+          description: |
+            Effective ISO-4217 currencies this game can be launched in: the
+            game's own override if set, else the provider default. An empty array
+            means no declared restriction is known. Filter the catalog with the
+            `currency` query parameter; treat this as the source of truth for which
+            player wallet currencies a game supports before launch.
+          items:
+            type: string
+            pattern: '^[A-Z]{3}$'
+          example: [USD, EUR]
 
     GameList:
       type: object
@@ -469,6 +511,25 @@ components:
         total: { type: integer }
         page: { type: integer }
         per_page: { type: integer }
+
+    ProviderRegistry:
+      type: object
+      required: [providers, total_count]
+      properties:
+        providers:
+          type: array
+          items:
+            type: object
+            required: [provider_code, is_registered, supported_currencies]
+            properties:
+              provider_code: { type: string, example: truelabs }
+              is_registered: { type: boolean }
+              supported_currencies:
+                type: array
+                description: ISO-4217 currencies the provider can settle. Empty = no declared restriction.
+                items: { type: string, pattern: '^[A-Z]{3}$' }
+                example: [USD, EUR]
+        total_count: { type: integer }
 
     CreateSessionRequest:
       type: object

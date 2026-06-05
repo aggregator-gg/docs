@@ -100,7 +100,8 @@ curl -X GET "https://api.aggregator.gg/v1/games?per_page=5" \
       "has_demo": true,
       "thumbnail_url": "https://cdn.aggregator.gg/thumbs/book-of-sun.jpg",
       "blocked_countries": ["US", "GB"],
-      "features": ["free_spins", "bonus_buy"]
+      "features": ["free_spins", "bonus_buy"],
+      "supported_currencies": ["USD", "EUR"]
     }
   ],
   "total": 142,
@@ -125,7 +126,22 @@ const { games, total } = await aggregator.games.list({
 console.log(`Found ${total} games`);
 ```
 
-You can filter by provider, game type, volatility, RTP range, features, and full-text search. See the [full API reference](/api/v1/operations/listgames/) for all query parameters.
+You can filter by provider, game type, volatility, RTP range, features, currency, and full-text search. See the [full API reference](/api/v1/operations/listgames/) for all query parameters.
+
+### Currency support
+
+Every game returns `supported_currencies` — the ISO-4217 currencies it can be launched in. This is the game's own list when set, otherwise the currencies its **provider** declares (provider→game inheritance), so a game with an empty list still inherits provider support.
+
+Use it to build a storefront that never shows a player a game their wallet currency can't open. Filter the catalog to a single currency with the `currency` query parameter:
+
+```bash
+curl -X GET "https://api.aggregator.gg/v1/games?currency=EUR" \
+  -H "Authorization: Bearer sk_live_xxx"
+```
+
+Only games whose effective `supported_currencies` includes `EUR` are returned (filtered before pagination, so `total` reflects it). You can also read provider-level support directly — without paging through games — from `GET /v1/providers/registry`, where each provider carries its own `supported_currencies`.
+
+A session launched ([Step 3](#step-3-launch-a-game)) in a currency the selected game and provider don't support can fail at launch, so filtering the catalog up front is the difference between a clean storefront and a dead-end click for the player.
 
 ---
 
