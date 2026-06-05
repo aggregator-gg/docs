@@ -465,7 +465,7 @@ const session = await aggregator.sessions.create(
 **Important details:**
 
 - `game_id` is **The Aggregator catalog UUID** — the `id` returned by `GET /v1/games`. It is **not** the provider's own game code (`provider_game_id`, for reference only). Always send The Aggregator `id`.
-- `balance` is in minor currency units (cents). 10000 = 100.00 EUR.
+- `balance` is in the currency's **minor units** — the ISO-4217 minor unit, determined by the **currency** (not configurable per operator). Every currency The Aggregator currently supports is 2-decimal, so the minor unit is 1/100: `10000` = `100.00 EUR`. (A 0-decimal currency such as JPY would use whole units, but no non-2-decimal currency is enabled today.)
 - `country` determines jurisdiction rules. Games blocked in the player's country return a `403`.
 - `return_url` is where the player lands when they close the game. If omitted, the game closes to a blank page.
 - Sessions expire after `expires_in` seconds. Create a new session if the player returns after expiry.
