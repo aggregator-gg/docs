@@ -141,6 +141,20 @@ https://api.aggregator.gg/v1
 
 All operator integrations use this single base URL. Pre-launch testing uses **welcome credits** + **demo sessions** (see below) — not a separate test cluster.
 
+## Platform IP addresses
+
+When the platform calls out to your systems — forwarding `bet` / `win` wallet callbacks to your callback URL, or (for game providers) calling your game/RGS API — the request originates from a fixed set of platform egress IPs. If you firewall or IP-allowlist the endpoint that receives our traffic, add these addresses so requests are not blocked.
+
+| Environment | Egress IP (IPv4) |
+|---|---|
+| Production | `116.202.36.242` |
+| Staging | `46.224.211.29` |
+
+- **Operators** integrate against production only — allowlist the **Production** IP on the endpoint that receives wallet callbacks.
+- **Game providers** validate against staging before go-live — allowlist **both** the staging and production IPs on the systems the platform calls.
+
+All platform egress is IPv4 today. These addresses are stable, but can change with infrastructure migrations; material changes are announced in advance via the [changelog](/resources/changelog/) and direct notice. **HMAC signature verification remains mandatory regardless of source IP** — the allowlist is an additional network control, never a replacement for verifying the signature.
+
 ## How welcome credits work
 
 1. You register your operator account in the [cabinet](https://app.aggregator.gg/register).
