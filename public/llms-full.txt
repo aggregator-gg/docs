@@ -508,7 +508,7 @@ The Aggregator sends a `POST` request with a JSON body:
   "action": "BET-WIN",
   "transaction_type": "bet",
   "transaction_id": "tx_bet_001",
-  "amount": "5.00",
+  "amount": 500,
   "currency": "EUR",
   "player_id": "player_42",
   "provider_code": "truelabs",
@@ -523,7 +523,7 @@ The Aggregator sends a `POST` request with a JSON body:
 Key fields (full reference in the [wallet callbacks guide](/guides/wallet-callbacks/)):
 
 - **Branch on `transaction_type`** (`bet` / `win` / `refund`) — not `action`, which is a provider-specific label (`"BET-WIN"`, `"BET"`, …).
-- `amount` is a positive **decimal string** in major currency units (e.g. `"5.00"` = 5 EUR). Note this differs from the response `balance` below, which is in minor units (cents).
+- `amount` is a positive **integer in minor units** (e.g. `500` = 5 EUR) — the **same unit** as the response `balance` below. The minor unit is determined by the ISO-4217 currency: 2-decimal currencies (EUR/USD) use 1/100 (`500` = €5.00), 0-decimal currencies (JPY/KRW) are 1:1 (`278` = ¥278), and 3-decimal currencies (KWD/BHD/OMR) use 1/1000.
 - `game_id` is The Aggregator catalog UUID; `game` is the provider's own slug.
 - `finished` is `true` on the final callback of a round.
 
@@ -576,7 +576,7 @@ Your endpoint must return **HTTP 200** with a JSON body containing `balance` **a
 }
 ```
 
-`balance` is the player's new balance in **minor units** (cents — e.g. `9500` = 95.00 EUR). This is a different denomination from the request `amount`, which is a major-unit decimal string (`"5.00"`). `currency` must match the request.
+`balance` is the player's new balance in **minor units** (cents — e.g. `9500` = 95.00 EUR). This is the **same denomination** as the request `amount` (an integer in minor units, `500` = €5.00), so you can apply `amount` to `balance` directly with no unit conversion. `currency` must match the request.
 
 **Error responses:**
 
@@ -603,6 +603,8 @@ app.post("/callbacks/wallet", async (req, res) => {
     return res.status(401).json({ error: "Invalid signature" });
   }
 
+  // `amount` is an integer in minor units (cents) — the same unit as `balance`,
+  // so it can be applied to the balance directly with no conversion.
   const { transaction_id, transaction_type, player_id, amount, currency } = req.body;
 
   // 2. Check idempotency — return the SAME response for a repeated transaction_id
@@ -1333,7 +1335,7 @@ The Aggregator sends a `POST` request to your `callback_url` with the following 
   "action": "BET-WIN",
   "transaction_type": "bet",
   "transaction_id": "provider-unique-tx-id",
-  "amount": "1.50",
+  "amount": 150,
   "currency": "EUR",
   "player_id": "player-123",
   "provider_code": "truelabs",
@@ -1352,7 +1354,7 @@ The Aggregator sends a `POST` request to your `callback_url` with the following 
 | `action` | `string` | Provider-specific action label (e.g. `"BET-WIN"`, `"BET"`, `"WIN"`). Use `transaction_type` for branching logic. |
 | `transaction_type` | `string` | One of `"bet"`, `"win"`, or `"refund"`. This is the field you use to decide how to update the player's balance. |
 | `transaction_id` | `string` | Provider-unique identifier for this transaction. Use as your idempotency key. |
-| `amount` | `string` | Decimal string representing the transaction amount (e.g. `"1.50"`). Always positive. |
+| `amount` | `integer` | Transaction amount in minor units (e.g. `150` = 1.50 EUR). Always positive. Same unit as the response `balance`. |
 | `currency` | `string` | ISO 4217 currency code (e.g. `"EUR"`, `"USD"`). |
 | `player_id` | `string` | The player identifier you provided when launching the game session. |
 | `provider_code` | `string` | Identifies the game provider (e.g. `"truelabs"`, `"bgaming"`). |
@@ -1361,6 +1363,20 @@ The Aggregator sends a `POST` request to your `callback_url` with the following 
 | `round_id` | `string` | Groups related transactions into a single game round. |
 | `finished` | `boolean` | `true` on the final callback of a round. |
 | `session_id` | `string` | UUID of the game session in The Aggregator. |
+
+:::note[Units: `amount` and `balance` are the same denomination]
+Both the request `amount` (this payload) and the response `balance` (your reply) are **integers in minor units** — never decimal strings. You can apply `amount` to your stored balance directly with **no unit conversion**.
+
+The minor unit is set by the ISO-4217 **currency**, not by you:
+
+| Currency type | Examples | Conversion | `amount` for 1.50 of currency |
+|---------------|----------|------------|-------------------------------|
+| 2-decimal | EUR, USD, GBP | major ×100 | `150` (= €1.50) |
+| 0-decimal | JPY, KRW | 1:1 | `278` (= ¥278) |
+| 3-decimal | KWD, BHD, OMR | major ×1000 | `1500` (= 1.500 KWD) |
+
+Use integer arithmetic (or a decimal type) throughout — never floating point.
+:::
 
 ---
 
@@ -1399,7 +1415,7 @@ Your server must return **HTTP 200** with a JSON body containing the player's up
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `balance` | `number` | Player's balance **after** applying the transaction, in minor units (cents). |
+| `balance` | `integer` | Player's balance **after** applying the transaction, in minor units (cents) — the same unit as the request `amount`. |
 | `currency` | `string` | ISO 4217 currency code. Must match the request currency. |
 | `player_id` | `string` | Echo back the `player_id` from the request. |
 
@@ -1411,26 +1427,26 @@ If your endpoint returns a non-2xx status or non-JSON body, The Aggregator treat
 
 ### bet
 
-The player places a bet. **Debit** the player's balance by `amount`.
+The player places a bet. **Debit** the player's balance by `amount`. `amount` is already in minor units, so subtract it directly — no conversion.
 
 ```
-player.balance -= parse_decimal(callback.amount)
+player.balance -= callback.amount   // integer minor units
 ```
 
 ### win
 
-The player wins. **Credit** the player's balance by `amount`.
+The player wins. **Credit** the player's balance by `amount`. `amount` is already in minor units, so add it directly — no conversion.
 
 ```
-player.balance += parse_decimal(callback.amount)
+player.balance += callback.amount   // integer minor units
 ```
 
 ### refund
 
-The round was cancelled by the provider. **Reverse the original bet** -- credit the player's balance by `amount`.
+The round was cancelled by the provider. **Reverse the original bet** -- credit the player's balance by `amount`. `amount` is already in minor units, so add it directly — no conversion.
 
 ```
-player.balance += parse_decimal(callback.amount)
+player.balance += callback.amount   // integer minor units
 ```
 
 A refund always refers to a previously processed `bet` with the same `round_id`. If you have not processed the original bet, you can safely ignore the refund.
@@ -1722,6 +1738,7 @@ Complete every item before switching from test mode to live traffic.
 - [ ] `bet` callbacks debit the player balance.
 - [ ] `win` callbacks credit the player balance.
 - [ ] `refund` callbacks credit the player balance (reversing a previous bet).
+- [ ] You read the request `amount` as an integer in minor units (cents) — the same unit as `balance` — and apply it without any major/minor conversion.
 - [ ] The `balance` in your response is an integer in minor units (cents).
 - [ ] You handle insufficient balance gracefully for `bet` callbacks (return an appropriate error).
 
@@ -1756,7 +1773,7 @@ Host: your-server.example.com
 Content-Type: application/json
 X-SIGNATURE: 8b1a9953c4611296a827abf8c47804d7e8c8e8c8e8c8e8c8e8c8e8c8e8c8e8c8
 
-{"action":"BET","transaction_type":"bet","transaction_id":"tx_bet_001","amount":"5.00","currency":"EUR","player_id":"player_42","provider_code":"truelabs","game":"book-of-sun","game_id":"d4f7a2b1-3c8e-4f5a-9b6d-1e2f3a4b5c6d","round_id":"round_abc","finished":false,"session_id":"..."}
+{"action":"BET","transaction_type":"bet","transaction_id":"tx_bet_001","amount":500,"currency":"EUR","player_id":"player_42","provider_code":"truelabs","game":"book-of-sun","game_id":"d4f7a2b1-3c8e-4f5a-9b6d-1e2f3a4b5c6d","round_id":"round_abc","finished":false,"session_id":"..."}
 ```
 
 The value of `X-SIGNATURE` is a lowercase hex-encoded HMAC-SHA256 digest. No `sha256=` prefix, no separator — just the raw 64-character hex string.

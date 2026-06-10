@@ -38,7 +38,7 @@ The Aggregator sends a `POST` request to your `callback_url` with the following 
   "action": "BET-WIN",
   "transaction_type": "bet",
   "transaction_id": "provider-unique-tx-id",
-  "amount": "1.50",
+  "amount": 150,
   "currency": "EUR",
   "player_id": "player-123",
   "provider_code": "truelabs",
@@ -57,7 +57,7 @@ The Aggregator sends a `POST` request to your `callback_url` with the following 
 | `action` | `string` | Provider-specific action label (e.g. `"BET-WIN"`, `"BET"`, `"WIN"`). Use `transaction_type` for branching logic. |
 | `transaction_type` | `string` | One of `"bet"`, `"win"`, or `"refund"`. This is the field you use to decide how to update the player's balance. |
 | `transaction_id` | `string` | Provider-unique identifier for this transaction. Use as your idempotency key. |
-| `amount` | `string` | Decimal string representing the transaction amount (e.g. `"1.50"`). Always positive. |
+| `amount` | `integer` | Transaction amount in minor units (e.g. `150` = 1.50 EUR). Always positive. Same unit as the response `balance`. |
 | `currency` | `string` | ISO 4217 currency code (e.g. `"EUR"`, `"USD"`). |
 | `player_id` | `string` | The player identifier you provided when launching the game session. |
 | `provider_code` | `string` | Identifies the game provider (e.g. `"truelabs"`, `"bgaming"`). |
@@ -66,6 +66,20 @@ The Aggregator sends a `POST` request to your `callback_url` with the following 
 | `round_id` | `string` | Groups related transactions into a single game round. |
 | `finished` | `boolean` | `true` on the final callback of a round. |
 | `session_id` | `string` | UUID of the game session in The Aggregator. |
+
+:::note[Units: `amount` and `balance` are the same denomination]
+Both the request `amount` (this payload) and the response `balance` (your reply) are **integers in minor units** — never decimal strings. You can apply `amount` to your stored balance directly with **no unit conversion**.
+
+The minor unit is set by the ISO-4217 **currency**, not by you:
+
+| Currency type | Examples | Conversion | `amount` for 1.50 of currency |
+|---------------|----------|------------|-------------------------------|
+| 2-decimal | EUR, USD, GBP | major ×100 | `150` (= €1.50) |
+| 0-decimal | JPY, KRW | 1:1 | `278` (= ¥278) |
+| 3-decimal | KWD, BHD, OMR | major ×1000 | `1500` (= 1.500 KWD) |
+
+Use integer arithmetic (or a decimal type) throughout — never floating point.
+:::
 
 ---
 
@@ -104,7 +118,7 @@ Your server must return **HTTP 200** with a JSON body containing the player's up
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `balance` | `number` | Player's balance **after** applying the transaction, in minor units (cents). |
+| `balance` | `integer` | Player's balance **after** applying the transaction, in minor units (cents) — the same unit as the request `amount`. |
 | `currency` | `string` | ISO 4217 currency code. Must match the request currency. |
 | `player_id` | `string` | Echo back the `player_id` from the request. |
 
@@ -116,26 +130,26 @@ If your endpoint returns a non-2xx status or non-JSON body, The Aggregator treat
 
 ### bet
 
-The player places a bet. **Debit** the player's balance by `amount`.
+The player places a bet. **Debit** the player's balance by `amount`. `amount` is already in minor units, so subtract it directly — no conversion.
 
 ```
-player.balance -= parse_decimal(callback.amount)
+player.balance -= callback.amount   // integer minor units
 ```
 
 ### win
 
-The player wins. **Credit** the player's balance by `amount`.
+The player wins. **Credit** the player's balance by `amount`. `amount` is already in minor units, so add it directly — no conversion.
 
 ```
-player.balance += parse_decimal(callback.amount)
+player.balance += callback.amount   // integer minor units
 ```
 
 ### refund
 
-The round was cancelled by the provider. **Reverse the original bet** -- credit the player's balance by `amount`.
+The round was cancelled by the provider. **Reverse the original bet** -- credit the player's balance by `amount`. `amount` is already in minor units, so add it directly — no conversion.
 
 ```
-player.balance += parse_decimal(callback.amount)
+player.balance += callback.amount   // integer minor units
 ```
 
 A refund always refers to a previously processed `bet` with the same `round_id`. If you have not processed the original bet, you can safely ignore the refund.
@@ -428,6 +442,7 @@ Complete every item before switching from test mode to live traffic.
 - [ ] `bet` callbacks debit the player balance.
 - [ ] `win` callbacks credit the player balance.
 - [ ] `refund` callbacks credit the player balance (reversing a previous bet).
+- [ ] You read the request `amount` as an integer in minor units (cents) — the same unit as `balance` — and apply it without any major/minor conversion.
 - [ ] The `balance` in your response is an integer in minor units (cents).
 - [ ] You handle insufficient balance gracefully for `bet` callbacks (return an appropriate error).
 

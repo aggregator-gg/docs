@@ -19,7 +19,7 @@ Host: your-server.example.com
 Content-Type: application/json
 X-SIGNATURE: 8b1a9953c4611296a827abf8c47804d7e8c8e8c8e8c8e8c8e8c8e8c8e8c8e8c8
 
-{"action":"BET","transaction_type":"bet","transaction_id":"tx_bet_001","amount":"5.00","currency":"EUR","player_id":"player_42","provider_code":"truelabs","game":"book-of-sun","game_id":"d4f7a2b1-3c8e-4f5a-9b6d-1e2f3a4b5c6d","round_id":"round_abc","finished":false,"session_id":"..."}
+{"action":"BET","transaction_type":"bet","transaction_id":"tx_bet_001","amount":500,"currency":"EUR","player_id":"player_42","provider_code":"truelabs","game":"book-of-sun","game_id":"d4f7a2b1-3c8e-4f5a-9b6d-1e2f3a4b5c6d","round_id":"round_abc","finished":false,"session_id":"..."}
 ```
 
 The value of `X-SIGNATURE` is a lowercase hex-encoded HMAC-SHA256 digest. No `sha256=` prefix, no separator — just the raw 64-character hex string.
