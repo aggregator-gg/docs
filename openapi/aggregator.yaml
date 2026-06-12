@@ -500,6 +500,44 @@ components:
             type: string
             pattern: '^[A-Z]{3}$'
           example: [USD, EUR]
+        min_bet_eur:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+          description: |
+            Minimum stake per spin as an EUR-denominated reference value. `null`
+            when the provider has not declared a limit. These are reference
+            figures in EUR — they are not converted to the player's wallet
+            currency.
+          example: 0.10
+        max_bet_eur:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+          description: |
+            Maximum stake per spin, EUR-denominated reference value. `null` when
+            undeclared.
+          example: 100.00
+        default_bet_eur:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+          description: |
+            Suggested default stake the operator may pre-select, EUR-denominated
+            reference value. `null` when undeclared.
+          example: 1.00
+        max_win_multiplier:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+          description: |
+            Maximum win expressed as a multiple of the stake (currency-agnostic).
+            `null` when the provider has not declared a cap.
+          example: 5000.00
 
     GameList:
       type: object
