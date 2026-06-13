@@ -145,12 +145,12 @@ paths:
     get:
       summary: List registered providers
       description: |
-        List the providers registered on the platform with their effective
-        `supported_currencies`. Use this to learn provider-level currency support
-        before fetching games, so you can filter your storefront and avoid
-        launch-time dead-ends for player wallet currencies a provider cannot
-        settle. Game-level support (`GET /v1/games`) narrows this when a game
-        declares its own list.
+        List the providers registered on the platform with their
+        `supported_currencies` and `blocked_countries` defaults. Use this to learn
+        provider-level currency support and blocked countries before fetching
+        games, so you can filter your storefront and avoid launch-time dead-ends.
+        Game-level values (`GET /v1/games`) override these when a game declares
+        its own list.
       tags: [Providers]
       operationId: listProviderRegistry
       responses:
@@ -480,9 +480,17 @@ components:
           format: uri
         blocked_countries:
           type: array
+          description: |
+            Effective ISO-3166-1 alpha-2 countries this game may NOT be launched
+            in — the provider-declared block carried to you. It is the per-game
+            override when the provider sets one, otherwise the whole-provider
+            default (`GET /v1/providers/registry`). A player whose `country` is in
+            this list is rejected at session create; filter your storefront on it
+            too. Empty = no country restriction.
           items:
             type: string
             pattern: '^[A-Z]{2}$'
+          example: [TR, FR]
         features:
           type: array
           items: { type: string }
@@ -521,7 +529,7 @@ components:
           type: array
           items:
             type: object
-            required: [provider_code, is_registered, supported_currencies]
+            required: [provider_code, is_registered, supported_currencies, blocked_countries]
             properties:
               provider_code: { type: string, example: truelabs }
               is_registered: { type: boolean }
@@ -530,6 +538,15 @@ components:
                 description: ISO-4217 currencies the provider can settle. Empty = no declared restriction.
                 items: { type: string, pattern: '^[A-Z]{3}$' }
                 example: [USD, EUR]
+              blocked_countries:
+                type: array
+                description: |
+                  The provider's whole-provider blocked-country default
+                  (ISO-3166-1 alpha-2). A game's effective `blocked_countries`
+                  (`GET /v1/games`) is this unless the game declares its own
+                  override. Empty = no provider-level country restriction.
+                items: { type: string, pattern: '^[A-Z]{2}$' }
+                example: [TR, FR]
         total_count: { type: integer }
 
     CreateSessionRequest:

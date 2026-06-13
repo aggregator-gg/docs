@@ -1,7 +1,7 @@
 {
   "item": [
     {
-      "id": "8bac3f5f-e0b7-4e90-8e80-c89de6e364df",
+      "id": "c029a6ec-d668-4c27-8b9f-ffe21b8a7f79",
       "name": "Games",
       "description": {
         "content": "",
@@ -9,7 +9,7 @@
       },
       "item": [
         {
-          "id": "a3b0e19e-3667-4ac0-bfe5-893d9dfaa8f7",
+          "id": "4775a6c6-2f7b-46ef-86c2-dc0ffddd2b67",
           "name": "List games",
           "request": {
             "name": "List games",
@@ -73,7 +73,7 @@
                 {
                   "disabled": false,
                   "key": "sort",
-                  "value": "-rtp",
+                  "value": "name",
                   "description": "Sort field; prefix with `-` for descending."
                 },
                 {
@@ -106,7 +106,7 @@
           },
           "response": [
             {
-              "id": "2d904618-6b00-4d22-9f98-028c97a11d7d",
+              "id": "67d22d9e-62a1-4b88-b75a-97cb452738c7",
               "name": "Page of games.",
               "originalRequest": {
                 "url": {
@@ -151,7 +151,7 @@
                     },
                     {
                       "key": "sort",
-                      "value": "-rtp"
+                      "value": "name"
                     },
                     {
                       "key": "page",
@@ -192,37 +192,37 @@
                   "disabled": false,
                   "description": "Echoes the active environment for this key.",
                   "key": "X-API-Mode",
-                  "value": "live"
+                  "value": "test"
                 },
                 {
                   "disabled": false,
                   "description": "Rate-limit ceiling for this key on this endpoint family.",
                   "key": "X-RateLimit-Limit",
-                  "value": "7323"
+                  "value": "9510"
                 },
                 {
                   "disabled": false,
                   "description": "Calls remaining in the current window.",
                   "key": "X-RateLimit-Remaining",
-                  "value": "7323"
+                  "value": "9510"
                 },
                 {
                   "disabled": false,
                   "description": "Unix timestamp when the current rate-limit window resets.",
                   "key": "X-RateLimit-Reset",
-                  "value": "7323"
+                  "value": "9510"
                 },
                 {
                   "key": "Content-Type",
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"games\": [\n    {\n      \"id\": \"cfa2278c-c440-8b87-7059-984577909c46\",\n      \"provider_code\": \"truelabs\",\n      \"provider_game_id\": \"string\",\n      \"name\": \"string\",\n      \"category\": \"string\",\n      \"has_demo\": false,\n      \"brand\": \"string\",\n      \"game_type\": \"slots\",\n      \"rtp\": 4.598935466961562,\n      \"volatility\": \"high\",\n      \"has_mobile\": true,\n      \"has_desktop\": true,\n      \"thumbnail_url\": \"http://HiBMRGRZQZgngkXmDwEtWuAq.xfhdTiP2ZW2fvopMp7l8ZrzcwOgVUGATAT9otp2crQnp-jgqa2q4yO\",\n      \"blocked_countries\": [\n        \"XZ\",\n        \"RT\"\n      ],\n      \"features\": [\n        \"string\",\n        \"string\"\n      ],\n      \"release_date\": \"1962-07-01\",\n      \"supported_currencies\": [\n        \"USD\",\n        \"EUR\"\n      ]\n    },\n    {\n      \"id\": \"13ee55a8-e331-8f69-24cf-e9ec2cc16372\",\n      \"provider_code\": \"truelabs\",\n      \"provider_game_id\": \"string\",\n      \"name\": \"string\",\n      \"category\": \"string\",\n      \"has_demo\": true,\n      \"brand\": \"string\",\n      \"game_type\": \"slots\",\n      \"rtp\": 46.6490703984189,\n      \"volatility\": \"medium\",\n      \"has_mobile\": true,\n      \"has_desktop\": false,\n      \"thumbnail_url\": \"https://tcUmBgowWrjnVaxtPXnbiYknhpMIa.amviszwPCUoI8n.Fw,R-IqmWmKeYCyD,9QA\",\n      \"blocked_countries\": [\n        \"FZ\",\n        \"HT\"\n      ],\n      \"features\": [\n        \"string\",\n        \"string\"\n      ],\n      \"release_date\": \"1974-11-27\",\n      \"supported_currencies\": [\n        \"USD\",\n        \"EUR\"\n      ]\n    }\n  ],\n  \"total\": 2307,\n  \"page\": 1478,\n  \"per_page\": 6960\n}",
+              "body": "{\n  \"games\": [\n    {\n      \"id\": \"2729c2d3-224f-4523-f4f0-dade5614acf3\",\n      \"provider_code\": \"truelabs\",\n      \"provider_game_id\": \"string\",\n      \"name\": \"string\",\n      \"category\": \"string\",\n      \"has_demo\": false,\n      \"brand\": \"string\",\n      \"game_type\": \"slots\",\n      \"rtp\": 5.0653792186860835,\n      \"volatility\": \"high\",\n      \"has_mobile\": true,\n      \"has_desktop\": true,\n      \"thumbnail_url\": \"https://vlAvctbUGtg.cfzH9VhXvRCl4gf1OcTQnLSkbH7umD3ayNyWJAdIxrSvNbE7\",\n      \"blocked_countries\": [\n        \"TR\",\n        \"FR\"\n      ],\n      \"features\": [\n        \"string\",\n        \"string\"\n      ],\n      \"release_date\": \"1990-08-06\",\n      \"supported_currencies\": [\n        \"USD\",\n        \"EUR\"\n      ]\n    },\n    {\n      \"id\": \"598ac253-c93c-eee8-c5aa-93e5117e5325\",\n      \"provider_code\": \"truelabs\",\n      \"provider_game_id\": \"string\",\n      \"name\": \"string\",\n      \"category\": \"string\",\n      \"has_demo\": false,\n      \"brand\": \"string\",\n      \"game_type\": \"slots\",\n      \"rtp\": 92.70868438723018,\n      \"volatility\": \"high\",\n      \"has_mobile\": true,\n      \"has_desktop\": false,\n      \"thumbnail_url\": \"http://BgEyhDtNHdBkHURKsEioPxaOPWccN.ygquMcvP\",\n      \"blocked_countries\": [\n        \"TR\",\n        \"FR\"\n      ],\n      \"features\": [\n        \"string\",\n        \"string\"\n      ],\n      \"release_date\": \"1996-01-25\",\n      \"supported_currencies\": [\n        \"USD\",\n        \"EUR\"\n      ]\n    }\n  ],\n  \"total\": 3928,\n  \"page\": 414,\n  \"per_page\": 8164\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "820b6dd3-f44f-4acc-9e76-e5b1858a1190",
+              "id": "01b87a4a-fac1-4269-82fd-971b0095d327",
               "name": "Missing, invalid, or revoked API key.",
               "originalRequest": {
                 "url": {
@@ -267,7 +267,7 @@
                     },
                     {
                       "key": "sort",
-                      "value": "-rtp"
+                      "value": "name"
                     },
                     {
                       "key": "page",
@@ -309,12 +309,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": 8872.650925129012,\n      \"key_1\": 3933.495171175586\n    }\n  }\n}",
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": false,\n      \"key_1\": \"string\",\n      \"key_2\": \"string\"\n    }\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "fcdba180-6eea-48f5-a407-eb8900b08df1",
+              "id": "bde227be-13f6-456d-a414-0a9fff4d4e29",
               "name": "Rate limit exceeded; consult `Retry-After`.",
               "originalRequest": {
                 "url": {
@@ -359,7 +359,7 @@
                     },
                     {
                       "key": "sort",
-                      "value": "-rtp"
+                      "value": "name"
                     },
                     {
                       "key": "page",
@@ -400,14 +400,14 @@
                   "disabled": false,
                   "description": "Seconds to wait before retry.",
                   "key": "Retry-After",
-                  "value": "7323"
+                  "value": "9510"
                 },
                 {
                   "key": "Content-Type",
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": 8872.650925129012,\n      \"key_1\": 3933.495171175586\n    }\n  }\n}",
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": false,\n      \"key_1\": \"string\",\n      \"key_2\": \"string\"\n    }\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -418,7 +418,7 @@
           }
         },
         {
-          "id": "f02ea34d-e2ee-4d44-889e-41d0de02225c",
+          "id": "1516ee1d-a902-4e80-9312-d4806775c081",
           "name": "Get a game",
           "request": {
             "name": "Get a game",
@@ -439,7 +439,7 @@
                 {
                   "disabled": false,
                   "type": "any",
-                  "value": "0ae4d729-45cb-69dd-19de-44a04d15a210",
+                  "value": "98edab6c-1077-456c-e10d-85367d0f8f43",
                   "key": "game_id",
                   "description": "(Required) "
                 }
@@ -456,7 +456,7 @@
           },
           "response": [
             {
-              "id": "69961432-61cc-4b6c-9cdd-a67246d4f72a",
+              "id": "cdec73ff-08eb-4a31-ab8a-70718bc78fc9",
               "name": "The requested game.",
               "originalRequest": {
                 "url": {
@@ -472,7 +472,7 @@
                     {
                       "disabled": false,
                       "type": "any",
-                      "value": "0ae4d729-45cb-69dd-19de-44a04d15a210",
+                      "value": "98edab6c-1077-456c-e10d-85367d0f8f43",
                       "key": "game_id",
                       "description": "(Required) "
                     }
@@ -503,12 +503,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"game\": {\n    \"id\": \"fd3409d8-4a2c-b3b4-38f8-7f1bd2f27f6c\",\n    \"provider_code\": \"truelabs\",\n    \"provider_game_id\": \"string\",\n    \"name\": \"string\",\n    \"category\": \"string\",\n    \"has_demo\": false,\n    \"brand\": \"string\",\n    \"game_type\": \"slots\",\n    \"rtp\": 15.241157414980911,\n    \"volatility\": \"low\",\n    \"has_mobile\": true,\n    \"has_desktop\": true,\n    \"thumbnail_url\": \"https://RwVCgrEmGhSjdZMURKP.lrsxuzSSKy4oJAyhYRbgU3M1IpsEl84aH\",\n    \"blocked_countries\": [\n      \"QM\",\n      \"LV\"\n    ],\n    \"features\": [\n      \"string\",\n      \"string\"\n    ],\n    \"release_date\": \"2012-06-07\",\n    \"supported_currencies\": [\n      \"USD\",\n      \"EUR\"\n    ]\n  }\n}",
+              "body": "{\n  \"game\": {\n    \"id\": \"22f0ea2f-bce3-59da-ef82-cc59c7fd2059\",\n    \"provider_code\": \"truelabs\",\n    \"provider_game_id\": \"string\",\n    \"name\": \"string\",\n    \"category\": \"string\",\n    \"has_demo\": true,\n    \"brand\": \"string\",\n    \"game_type\": \"slots\",\n    \"rtp\": 3.0965055834956234,\n    \"volatility\": \"low\",\n    \"has_mobile\": true,\n    \"has_desktop\": false,\n    \"thumbnail_url\": \"https://bFc.wreudN\",\n    \"blocked_countries\": [\n      \"TR\",\n      \"FR\"\n    ],\n    \"features\": [\n      \"string\",\n      \"string\"\n    ],\n    \"release_date\": \"1980-05-09\",\n    \"supported_currencies\": [\n      \"USD\",\n      \"EUR\"\n    ]\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "70f0f0c0-8d49-4458-a8ca-44d57afeab25",
+              "id": "5d819244-9615-4020-8041-60c3dc5ef915",
               "name": "`game_id` is not a valid UUID.",
               "originalRequest": {
                 "url": {
@@ -524,7 +524,7 @@
                     {
                       "disabled": false,
                       "type": "any",
-                      "value": "0ae4d729-45cb-69dd-19de-44a04d15a210",
+                      "value": "98edab6c-1077-456c-e10d-85367d0f8f43",
                       "key": "game_id",
                       "description": "(Required) "
                     }
@@ -555,12 +555,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": 8872.650925129012,\n      \"key_1\": 3933.495171175586\n    }\n  }\n}",
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": false,\n      \"key_1\": \"string\",\n      \"key_2\": \"string\"\n    }\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "3bfeff96-745b-4cf8-a39b-17eff0135598",
+              "id": "1f948eac-3651-420a-85ab-22a4422c29bd",
               "name": "Missing, invalid, or revoked API key.",
               "originalRequest": {
                 "url": {
@@ -576,7 +576,7 @@
                     {
                       "disabled": false,
                       "type": "any",
-                      "value": "0ae4d729-45cb-69dd-19de-44a04d15a210",
+                      "value": "98edab6c-1077-456c-e10d-85367d0f8f43",
                       "key": "game_id",
                       "description": "(Required) "
                     }
@@ -607,12 +607,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": 8872.650925129012,\n      \"key_1\": 3933.495171175586\n    }\n  }\n}",
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": false,\n      \"key_1\": \"string\",\n      \"key_2\": \"string\"\n    }\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "8f4ce5c5-225f-4c27-b85d-93e20b9c51dc",
+              "id": "b0528083-d927-4f46-82e9-8192d556dcbe",
               "name": "No game found with that ID.",
               "originalRequest": {
                 "url": {
@@ -628,7 +628,7 @@
                     {
                       "disabled": false,
                       "type": "any",
-                      "value": "0ae4d729-45cb-69dd-19de-44a04d15a210",
+                      "value": "98edab6c-1077-456c-e10d-85367d0f8f43",
                       "key": "game_id",
                       "description": "(Required) "
                     }
@@ -659,7 +659,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": 8872.650925129012,\n      \"key_1\": 3933.495171175586\n    }\n  }\n}",
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": false,\n      \"key_1\": \"string\",\n      \"key_2\": \"string\"\n    }\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -673,7 +673,7 @@
       "event": []
     },
     {
-      "id": "22a165b6-a583-4823-a7a8-597999bd8e39",
+      "id": "f7420f17-c648-47b8-a0b3-212ab5546c28",
       "name": "Providers",
       "description": {
         "content": "",
@@ -681,12 +681,12 @@
       },
       "item": [
         {
-          "id": "5f4b114c-7848-45bf-8269-2ee61b14f6bc",
+          "id": "8923662f-a557-4a6f-807e-731b997cf4fd",
           "name": "List registered providers",
           "request": {
             "name": "List registered providers",
             "description": {
-              "content": "List the providers registered on the platform with their effective\n`supported_currencies`. Use this to learn provider-level currency support\nbefore fetching games, so you can filter your storefront and avoid\nlaunch-time dead-ends for player wallet currencies a provider cannot\nsettle. Game-level support (`GET /v1/games`) narrows this when a game\ndeclares its own list.\n",
+              "content": "List the providers registered on the platform with their\n`supported_currencies` and `blocked_countries` defaults. Use this to learn\nprovider-level currency support and blocked countries before fetching\ngames, so you can filter your storefront and avoid launch-time dead-ends.\nGame-level values (`GET /v1/games`) override these when a game declares\nits own list.\n",
               "type": "text/plain"
             },
             "url": {
@@ -711,7 +711,7 @@
           },
           "response": [
             {
-              "id": "4e96d820-4596-41c7-9934-37daa159ce02",
+              "id": "b407e407-a556-4399-b363-fe6914e17640",
               "name": "The provider registry.",
               "originalRequest": {
                 "url": {
@@ -750,12 +750,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"providers\": [\n    {\n      \"provider_code\": \"truelabs\",\n      \"is_registered\": true,\n      \"supported_currencies\": [\n        \"USD\",\n        \"EUR\"\n      ]\n    },\n    {\n      \"provider_code\": \"truelabs\",\n      \"is_registered\": true,\n      \"supported_currencies\": [\n        \"USD\",\n        \"EUR\"\n      ]\n    }\n  ],\n  \"total_count\": 855\n}",
+              "body": "{\n  \"providers\": [\n    {\n      \"provider_code\": \"truelabs\",\n      \"is_registered\": false,\n      \"supported_currencies\": [\n        \"USD\",\n        \"EUR\"\n      ],\n      \"blocked_countries\": [\n        \"TR\",\n        \"FR\"\n      ]\n    },\n    {\n      \"provider_code\": \"truelabs\",\n      \"is_registered\": true,\n      \"supported_currencies\": [\n        \"USD\",\n        \"EUR\"\n      ],\n      \"blocked_countries\": [\n        \"TR\",\n        \"FR\"\n      ]\n    }\n  ],\n  \"total_count\": 5382\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "40f747e9-73f8-4c4d-8a4f-4ec1dfa22251",
+              "id": "d444fe6c-b7cd-4bc8-bc0b-7396eda880ee",
               "name": "Missing, invalid, or revoked API key.",
               "originalRequest": {
                 "url": {
@@ -794,7 +794,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": 8872.650925129012,\n      \"key_1\": 3933.495171175586\n    }\n  }\n}",
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": false,\n      \"key_1\": \"string\",\n      \"key_2\": \"string\"\n    }\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -808,7 +808,7 @@
       "event": []
     },
     {
-      "id": "546ff5b6-e227-42ba-a0ef-3f21a77f1936",
+      "id": "94f2ee79-fb0c-4449-94fa-fb1e4a461168",
       "name": "Sessions",
       "description": {
         "content": "",
@@ -816,7 +816,7 @@
       },
       "item": [
         {
-          "id": "5479e01b-44cd-4e4d-aa90-7f0d02f5c40f",
+          "id": "3496d9ec-7fc4-43ca-9f6c-490a596a4541",
           "name": "Create a real-money session",
           "request": {
             "name": "Create a real-money session",
@@ -839,7 +839,7 @@
                 "disabled": false,
                 "description": "(Required) Unique key for idempotent retry semantics. Retries within 24 hours\nreturn the cached response. Same key with a different body returns\n409 Conflict.\n",
                 "key": "Idempotency-Key",
-                "value": "6V"
+                "value": "7fdUcJQHo"
               },
               {
                 "key": "Content-Type",
@@ -854,7 +854,7 @@
             "auth": null,
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"game_id\": \"98bc4bea-66b9-49af-7ce4-d087d92137c0\",\n  \"player_id\": \"string\",\n  \"balance\": 7647,\n  \"currency\": \"AUD\",\n  \"country\": \"RE\",\n  \"lang\": \"en\",\n  \"return_url\": \"https://aEnXfGWJgduPqopXppyWjNg.zlynhTsjR+DD\"\n}",
+              "raw": "{\n  \"game_id\": \"b5e2bcb4-442e-6a9f-2410-182fe019a1fe\",\n  \"player_id\": \"string\",\n  \"balance\": 5811,\n  \"currency\": \"AUD\",\n  \"country\": \"PE\",\n  \"lang\": \"en\",\n  \"return_url\": \"https://BJyih.gyqvV4HTMcfjfPtt9zkHfR6wh3hXF29JAN+tZ-0\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -864,7 +864,7 @@
           },
           "response": [
             {
-              "id": "2f19c141-193e-4b76-9d7c-1f0e3e6ac20a",
+              "id": "63c1858b-cb34-4146-a47c-43becb61b632",
               "name": "Session created.",
               "originalRequest": {
                 "url": {
@@ -890,7 +890,7 @@
                     "disabled": false,
                     "description": "(Required) Unique key for idempotent retry semantics. Retries within 24 hours\nreturn the cached response. Same key with a different body returns\n409 Conflict.\n",
                     "key": "Idempotency-Key",
-                    "value": "6V"
+                    "value": "7fdUcJQHo"
                   },
                   {
                     "key": "Accept",
@@ -900,7 +900,7 @@
                 "method": "POST",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"game_id\": \"98bc4bea-66b9-49af-7ce4-d087d92137c0\",\n  \"player_id\": \"string\",\n  \"balance\": 7647,\n  \"currency\": \"AUD\",\n  \"country\": \"RE\",\n  \"lang\": \"en\",\n  \"return_url\": \"https://aEnXfGWJgduPqopXppyWjNg.zlynhTsjR+DD\"\n}",
+                  "raw": "{\n  \"game_id\": \"b5e2bcb4-442e-6a9f-2410-182fe019a1fe\",\n  \"player_id\": \"string\",\n  \"balance\": 5811,\n  \"currency\": \"AUD\",\n  \"country\": \"PE\",\n  \"lang\": \"en\",\n  \"return_url\": \"https://BJyih.gyqvV4HTMcfjfPtt9zkHfR6wh3hXF29JAN+tZ-0\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -922,12 +922,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"session_id\": \"69511b4f-d321-4e05-36ff-babca0d97577\",\n  \"game_url\": \"https://UXVgHeHybEQeWGIbANTedtss.ogkbtTf5IWOKJn2qHvSuUm\",\n  \"provider_code\": \"string\",\n  \"provider_session_uid\": \"string\",\n  \"warning\": \"string\"\n}",
+              "body": "{\n  \"session_id\": \"138498f7-e59a-20b2-b266-8f40a90500ba\",\n  \"game_url\": \"https://PQyNDI.vinyagIKHFz\",\n  \"provider_code\": \"string\",\n  \"provider_session_uid\": \"string\",\n  \"warning\": \"string\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "67e45aca-772e-43e3-94fc-d095224e7f43",
+              "id": "fa5083a5-8a43-4a99-b09a-a6873a9d735f",
               "name": "Validation failed or missing/invalid `Idempotency-Key` header.",
               "originalRequest": {
                 "url": {
@@ -953,7 +953,7 @@
                     "disabled": false,
                     "description": "(Required) Unique key for idempotent retry semantics. Retries within 24 hours\nreturn the cached response. Same key with a different body returns\n409 Conflict.\n",
                     "key": "Idempotency-Key",
-                    "value": "6V"
+                    "value": "7fdUcJQHo"
                   },
                   {
                     "key": "Accept",
@@ -963,7 +963,7 @@
                 "method": "POST",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"game_id\": \"98bc4bea-66b9-49af-7ce4-d087d92137c0\",\n  \"player_id\": \"string\",\n  \"balance\": 7647,\n  \"currency\": \"AUD\",\n  \"country\": \"RE\",\n  \"lang\": \"en\",\n  \"return_url\": \"https://aEnXfGWJgduPqopXppyWjNg.zlynhTsjR+DD\"\n}",
+                  "raw": "{\n  \"game_id\": \"b5e2bcb4-442e-6a9f-2410-182fe019a1fe\",\n  \"player_id\": \"string\",\n  \"balance\": 5811,\n  \"currency\": \"AUD\",\n  \"country\": \"PE\",\n  \"lang\": \"en\",\n  \"return_url\": \"https://BJyih.gyqvV4HTMcfjfPtt9zkHfR6wh3hXF29JAN+tZ-0\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -979,12 +979,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": 8872.650925129012,\n      \"key_1\": 3933.495171175586\n    }\n  }\n}",
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": false,\n      \"key_1\": \"string\",\n      \"key_2\": \"string\"\n    }\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "5565cbfd-3c3e-4bc9-bfd3-2076cf7813d3",
+              "id": "283d546a-e91b-466f-9d12-34f2eb0a2cc1",
               "name": "Missing, invalid, or revoked API key.",
               "originalRequest": {
                 "url": {
@@ -1010,7 +1010,7 @@
                     "disabled": false,
                     "description": "(Required) Unique key for idempotent retry semantics. Retries within 24 hours\nreturn the cached response. Same key with a different body returns\n409 Conflict.\n",
                     "key": "Idempotency-Key",
-                    "value": "6V"
+                    "value": "7fdUcJQHo"
                   },
                   {
                     "key": "Accept",
@@ -1020,7 +1020,7 @@
                 "method": "POST",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"game_id\": \"98bc4bea-66b9-49af-7ce4-d087d92137c0\",\n  \"player_id\": \"string\",\n  \"balance\": 7647,\n  \"currency\": \"AUD\",\n  \"country\": \"RE\",\n  \"lang\": \"en\",\n  \"return_url\": \"https://aEnXfGWJgduPqopXppyWjNg.zlynhTsjR+DD\"\n}",
+                  "raw": "{\n  \"game_id\": \"b5e2bcb4-442e-6a9f-2410-182fe019a1fe\",\n  \"player_id\": \"string\",\n  \"balance\": 5811,\n  \"currency\": \"AUD\",\n  \"country\": \"PE\",\n  \"lang\": \"en\",\n  \"return_url\": \"https://BJyih.gyqvV4HTMcfjfPtt9zkHfR6wh3hXF29JAN+tZ-0\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -1036,12 +1036,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": 8872.650925129012,\n      \"key_1\": 3933.495171175586\n    }\n  }\n}",
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": false,\n      \"key_1\": \"string\",\n      \"key_2\": \"string\"\n    }\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "3a1c2cf7-5820-48b3-a49c-b2b359747037",
+              "id": "8780f4a4-77c5-400e-a8b1-1d6be674a70b",
               "name": "Operator not configured for this provider, game not allowed for\noperator, jurisdiction blocked, or player self-excluded.\n",
               "originalRequest": {
                 "url": {
@@ -1067,7 +1067,7 @@
                     "disabled": false,
                     "description": "(Required) Unique key for idempotent retry semantics. Retries within 24 hours\nreturn the cached response. Same key with a different body returns\n409 Conflict.\n",
                     "key": "Idempotency-Key",
-                    "value": "6V"
+                    "value": "7fdUcJQHo"
                   },
                   {
                     "key": "Accept",
@@ -1077,7 +1077,7 @@
                 "method": "POST",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"game_id\": \"98bc4bea-66b9-49af-7ce4-d087d92137c0\",\n  \"player_id\": \"string\",\n  \"balance\": 7647,\n  \"currency\": \"AUD\",\n  \"country\": \"RE\",\n  \"lang\": \"en\",\n  \"return_url\": \"https://aEnXfGWJgduPqopXppyWjNg.zlynhTsjR+DD\"\n}",
+                  "raw": "{\n  \"game_id\": \"b5e2bcb4-442e-6a9f-2410-182fe019a1fe\",\n  \"player_id\": \"string\",\n  \"balance\": 5811,\n  \"currency\": \"AUD\",\n  \"country\": \"PE\",\n  \"lang\": \"en\",\n  \"return_url\": \"https://BJyih.gyqvV4HTMcfjfPtt9zkHfR6wh3hXF29JAN+tZ-0\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -1093,12 +1093,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": 8872.650925129012,\n      \"key_1\": 3933.495171175586\n    }\n  }\n}",
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": false,\n      \"key_1\": \"string\",\n      \"key_2\": \"string\"\n    }\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "247ee5e1-76f2-43c9-86ef-1cb0b92d8049",
+              "id": "e3213489-b548-4e8a-9621-f36334ae2a67",
               "name": "Game not found.",
               "originalRequest": {
                 "url": {
@@ -1124,7 +1124,7 @@
                     "disabled": false,
                     "description": "(Required) Unique key for idempotent retry semantics. Retries within 24 hours\nreturn the cached response. Same key with a different body returns\n409 Conflict.\n",
                     "key": "Idempotency-Key",
-                    "value": "6V"
+                    "value": "7fdUcJQHo"
                   },
                   {
                     "key": "Accept",
@@ -1134,7 +1134,7 @@
                 "method": "POST",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"game_id\": \"98bc4bea-66b9-49af-7ce4-d087d92137c0\",\n  \"player_id\": \"string\",\n  \"balance\": 7647,\n  \"currency\": \"AUD\",\n  \"country\": \"RE\",\n  \"lang\": \"en\",\n  \"return_url\": \"https://aEnXfGWJgduPqopXppyWjNg.zlynhTsjR+DD\"\n}",
+                  "raw": "{\n  \"game_id\": \"b5e2bcb4-442e-6a9f-2410-182fe019a1fe\",\n  \"player_id\": \"string\",\n  \"balance\": 5811,\n  \"currency\": \"AUD\",\n  \"country\": \"PE\",\n  \"lang\": \"en\",\n  \"return_url\": \"https://BJyih.gyqvV4HTMcfjfPtt9zkHfR6wh3hXF29JAN+tZ-0\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -1150,12 +1150,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": 8872.650925129012,\n      \"key_1\": 3933.495171175586\n    }\n  }\n}",
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": false,\n      \"key_1\": \"string\",\n      \"key_2\": \"string\"\n    }\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "783cadfc-d62e-4619-965b-cae0142be835",
+              "id": "9e46ac17-faa5-46e1-975d-7951f93ebdb8",
               "name": "Idempotency key reused with a different request body.",
               "originalRequest": {
                 "url": {
@@ -1181,7 +1181,7 @@
                     "disabled": false,
                     "description": "(Required) Unique key for idempotent retry semantics. Retries within 24 hours\nreturn the cached response. Same key with a different body returns\n409 Conflict.\n",
                     "key": "Idempotency-Key",
-                    "value": "6V"
+                    "value": "7fdUcJQHo"
                   },
                   {
                     "key": "Accept",
@@ -1191,7 +1191,7 @@
                 "method": "POST",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"game_id\": \"98bc4bea-66b9-49af-7ce4-d087d92137c0\",\n  \"player_id\": \"string\",\n  \"balance\": 7647,\n  \"currency\": \"AUD\",\n  \"country\": \"RE\",\n  \"lang\": \"en\",\n  \"return_url\": \"https://aEnXfGWJgduPqopXppyWjNg.zlynhTsjR+DD\"\n}",
+                  "raw": "{\n  \"game_id\": \"b5e2bcb4-442e-6a9f-2410-182fe019a1fe\",\n  \"player_id\": \"string\",\n  \"balance\": 5811,\n  \"currency\": \"AUD\",\n  \"country\": \"PE\",\n  \"lang\": \"en\",\n  \"return_url\": \"https://BJyih.gyqvV4HTMcfjfPtt9zkHfR6wh3hXF29JAN+tZ-0\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -1207,12 +1207,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": 8872.650925129012,\n      \"key_1\": 3933.495171175586\n    }\n  }\n}",
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": false,\n      \"key_1\": \"string\",\n      \"key_2\": \"string\"\n    }\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "4abe607a-3b39-46c5-bb86-3d8ccf5a53a6",
+              "id": "d50d39b4-1650-49b7-9fe3-5d6ee48c37e0",
               "name": "Rate limit exceeded; consult `Retry-After`.",
               "originalRequest": {
                 "url": {
@@ -1238,7 +1238,7 @@
                     "disabled": false,
                     "description": "(Required) Unique key for idempotent retry semantics. Retries within 24 hours\nreturn the cached response. Same key with a different body returns\n409 Conflict.\n",
                     "key": "Idempotency-Key",
-                    "value": "6V"
+                    "value": "7fdUcJQHo"
                   },
                   {
                     "key": "Accept",
@@ -1248,7 +1248,7 @@
                 "method": "POST",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"game_id\": \"98bc4bea-66b9-49af-7ce4-d087d92137c0\",\n  \"player_id\": \"string\",\n  \"balance\": 7647,\n  \"currency\": \"AUD\",\n  \"country\": \"RE\",\n  \"lang\": \"en\",\n  \"return_url\": \"https://aEnXfGWJgduPqopXppyWjNg.zlynhTsjR+DD\"\n}",
+                  "raw": "{\n  \"game_id\": \"b5e2bcb4-442e-6a9f-2410-182fe019a1fe\",\n  \"player_id\": \"string\",\n  \"balance\": 5811,\n  \"currency\": \"AUD\",\n  \"country\": \"PE\",\n  \"lang\": \"en\",\n  \"return_url\": \"https://BJyih.gyqvV4HTMcfjfPtt9zkHfR6wh3hXF29JAN+tZ-0\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -1263,19 +1263,19 @@
                   "disabled": false,
                   "description": "Seconds to wait before retry.",
                   "key": "Retry-After",
-                  "value": "7323"
+                  "value": "9510"
                 },
                 {
                   "key": "Content-Type",
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": 8872.650925129012,\n      \"key_1\": 3933.495171175586\n    }\n  }\n}",
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": false,\n      \"key_1\": \"string\",\n      \"key_2\": \"string\"\n    }\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "f03df26f-4420-4732-aba1-bf03b42736ae",
+              "id": "9afdea14-d23f-4a64-b0ca-64b1f84bbeb5",
               "name": "Provider returned an error when creating the session.",
               "originalRequest": {
                 "url": {
@@ -1301,7 +1301,7 @@
                     "disabled": false,
                     "description": "(Required) Unique key for idempotent retry semantics. Retries within 24 hours\nreturn the cached response. Same key with a different body returns\n409 Conflict.\n",
                     "key": "Idempotency-Key",
-                    "value": "6V"
+                    "value": "7fdUcJQHo"
                   },
                   {
                     "key": "Accept",
@@ -1311,7 +1311,7 @@
                 "method": "POST",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"game_id\": \"98bc4bea-66b9-49af-7ce4-d087d92137c0\",\n  \"player_id\": \"string\",\n  \"balance\": 7647,\n  \"currency\": \"AUD\",\n  \"country\": \"RE\",\n  \"lang\": \"en\",\n  \"return_url\": \"https://aEnXfGWJgduPqopXppyWjNg.zlynhTsjR+DD\"\n}",
+                  "raw": "{\n  \"game_id\": \"b5e2bcb4-442e-6a9f-2410-182fe019a1fe\",\n  \"player_id\": \"string\",\n  \"balance\": 5811,\n  \"currency\": \"AUD\",\n  \"country\": \"PE\",\n  \"lang\": \"en\",\n  \"return_url\": \"https://BJyih.gyqvV4HTMcfjfPtt9zkHfR6wh3hXF29JAN+tZ-0\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -1327,12 +1327,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": 8872.650925129012,\n      \"key_1\": 3933.495171175586\n    }\n  }\n}",
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": false,\n      \"key_1\": \"string\",\n      \"key_2\": \"string\"\n    }\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "eacb2876-ab14-44c4-b283-a81ccba9db4c",
+              "id": "a5d74cc4-6121-497a-afd7-c1b12a1d32fa",
               "name": "Provider temporarily unavailable.",
               "originalRequest": {
                 "url": {
@@ -1358,7 +1358,7 @@
                     "disabled": false,
                     "description": "(Required) Unique key for idempotent retry semantics. Retries within 24 hours\nreturn the cached response. Same key with a different body returns\n409 Conflict.\n",
                     "key": "Idempotency-Key",
-                    "value": "6V"
+                    "value": "7fdUcJQHo"
                   },
                   {
                     "key": "Accept",
@@ -1368,7 +1368,7 @@
                 "method": "POST",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"game_id\": \"98bc4bea-66b9-49af-7ce4-d087d92137c0\",\n  \"player_id\": \"string\",\n  \"balance\": 7647,\n  \"currency\": \"AUD\",\n  \"country\": \"RE\",\n  \"lang\": \"en\",\n  \"return_url\": \"https://aEnXfGWJgduPqopXppyWjNg.zlynhTsjR+DD\"\n}",
+                  "raw": "{\n  \"game_id\": \"b5e2bcb4-442e-6a9f-2410-182fe019a1fe\",\n  \"player_id\": \"string\",\n  \"balance\": 5811,\n  \"currency\": \"AUD\",\n  \"country\": \"PE\",\n  \"lang\": \"en\",\n  \"return_url\": \"https://BJyih.gyqvV4HTMcfjfPtt9zkHfR6wh3hXF29JAN+tZ-0\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -1384,7 +1384,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": 8872.650925129012,\n      \"key_1\": 3933.495171175586\n    }\n  }\n}",
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": false,\n      \"key_1\": \"string\",\n      \"key_2\": \"string\"\n    }\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -1395,7 +1395,7 @@
           }
         },
         {
-          "id": "3c198557-55e0-4a61-834a-707d4ea0319b",
+          "id": "3847175d-4320-40f4-bcb7-cea28ab0ff1d",
           "name": "Create a demo session",
           "request": {
             "name": "Create a demo session",
@@ -1427,7 +1427,7 @@
             "auth": null,
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"game_id\": \"622184d8-e66b-b0c0-017b-dbc4a68b1cf4\"\n}",
+              "raw": "{\n  \"game_id\": \"f64aec8b-fddf-d2c0-ffee-00be66cebeb2\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1437,7 +1437,7 @@
           },
           "response": [
             {
-              "id": "61c317fd-4efe-4819-855b-4cfeee2f3c73",
+              "id": "7770cf41-978c-4a1a-9661-55b7be3873af",
               "name": "Demo session created.",
               "originalRequest": {
                 "url": {
@@ -1467,7 +1467,7 @@
                 "method": "POST",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"game_id\": \"622184d8-e66b-b0c0-017b-dbc4a68b1cf4\"\n}",
+                  "raw": "{\n  \"game_id\": \"f64aec8b-fddf-d2c0-ffee-00be66cebeb2\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -1483,12 +1483,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"session_id\": \"69511b4f-d321-4e05-36ff-babca0d97577\",\n  \"game_url\": \"https://UXVgHeHybEQeWGIbANTedtss.ogkbtTf5IWOKJn2qHvSuUm\",\n  \"provider_code\": \"string\",\n  \"provider_session_uid\": \"string\",\n  \"warning\": \"string\"\n}",
+              "body": "{\n  \"session_id\": \"138498f7-e59a-20b2-b266-8f40a90500ba\",\n  \"game_url\": \"https://PQyNDI.vinyagIKHFz\",\n  \"provider_code\": \"string\",\n  \"provider_session_uid\": \"string\",\n  \"warning\": \"string\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "17f66ce5-b51e-4a11-93d3-3c15ca419866",
+              "id": "6e50a590-c4b6-4a2b-aa30-8abf19de04f4",
               "name": "Missing, invalid, or revoked API key.",
               "originalRequest": {
                 "url": {
@@ -1518,7 +1518,7 @@
                 "method": "POST",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"game_id\": \"622184d8-e66b-b0c0-017b-dbc4a68b1cf4\"\n}",
+                  "raw": "{\n  \"game_id\": \"f64aec8b-fddf-d2c0-ffee-00be66cebeb2\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -1534,12 +1534,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": 8872.650925129012,\n      \"key_1\": 3933.495171175586\n    }\n  }\n}",
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": false,\n      \"key_1\": \"string\",\n      \"key_2\": \"string\"\n    }\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "a6ef5630-0b77-4158-82f3-0aa0f90a4595",
+              "id": "4792d43f-95b5-4caf-9686-d6a40e8f0614",
               "name": "Game not found or does not support demo mode.",
               "originalRequest": {
                 "url": {
@@ -1569,7 +1569,7 @@
                 "method": "POST",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"game_id\": \"622184d8-e66b-b0c0-017b-dbc4a68b1cf4\"\n}",
+                  "raw": "{\n  \"game_id\": \"f64aec8b-fddf-d2c0-ffee-00be66cebeb2\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -1585,7 +1585,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": 8872.650925129012,\n      \"key_1\": 3933.495171175586\n    }\n  }\n}",
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": false,\n      \"key_1\": \"string\",\n      \"key_2\": \"string\"\n    }\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -1596,7 +1596,7 @@
           }
         },
         {
-          "id": "30c3d0ea-3861-48af-b89a-4307b4286a51",
+          "id": "1fb67dc9-2295-4a1e-bbec-daacc0bee64f",
           "name": "Get session details",
           "request": {
             "name": "Get session details",
@@ -1617,7 +1617,7 @@
                 {
                   "disabled": false,
                   "type": "any",
-                  "value": "0ae4d729-45cb-69dd-19de-44a04d15a210",
+                  "value": "98edab6c-1077-456c-e10d-85367d0f8f43",
                   "key": "session_id",
                   "description": "(Required) "
                 }
@@ -1634,7 +1634,7 @@
           },
           "response": [
             {
-              "id": "ce099cc8-9550-47c4-8673-75e99368d162",
+              "id": "aee8b867-31bd-4ef4-aed9-21f574b148d1",
               "name": "Session details.",
               "originalRequest": {
                 "url": {
@@ -1650,7 +1650,7 @@
                     {
                       "disabled": false,
                       "type": "any",
-                      "value": "0ae4d729-45cb-69dd-19de-44a04d15a210",
+                      "value": "98edab6c-1077-456c-e10d-85367d0f8f43",
                       "key": "session_id",
                       "description": "(Required) "
                     }
@@ -1681,12 +1681,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"session_id\": \"075d2688-f535-a033-611a-29ca144ea482\",\n  \"status\": \"open\",\n  \"game_id\": \"5b115167-4e42-175e-2a1e-c813a3df2f61\",\n  \"provider_code\": \"string\",\n  \"created_at\": \"1948-12-21T07:57:20.029Z\",\n  \"player_id\": \"string\",\n  \"currency\": \"string\",\n  \"country\": \"string\",\n  \"closed_at\": \"1971-07-23T07:47:11.789Z\"\n}",
+              "body": "{\n  \"session_id\": \"199b35d7-7358-8688-6071-e0771430927f\",\n  \"status\": \"closed\",\n  \"game_id\": \"cb1c765e-911e-632d-68f3-48c8f915f9a6\",\n  \"provider_code\": \"string\",\n  \"created_at\": \"1981-05-17T02:05:15.967Z\",\n  \"player_id\": \"string\",\n  \"currency\": \"string\",\n  \"country\": \"string\",\n  \"closed_at\": \"2015-12-15T01:34:18.335Z\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "6bc50012-8822-445c-bf5e-5459e5b4e44a",
+              "id": "1a2d7f90-a30e-4606-a9a9-0872ddd03e53",
               "name": "Missing, invalid, or revoked API key.",
               "originalRequest": {
                 "url": {
@@ -1702,7 +1702,7 @@
                     {
                       "disabled": false,
                       "type": "any",
-                      "value": "0ae4d729-45cb-69dd-19de-44a04d15a210",
+                      "value": "98edab6c-1077-456c-e10d-85367d0f8f43",
                       "key": "session_id",
                       "description": "(Required) "
                     }
@@ -1733,12 +1733,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": 8872.650925129012,\n      \"key_1\": 3933.495171175586\n    }\n  }\n}",
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": false,\n      \"key_1\": \"string\",\n      \"key_2\": \"string\"\n    }\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "87da2170-0307-4069-aa92-fd931cf4d598",
+              "id": "e5d49251-513d-4e3d-b067-eee224d14195",
               "name": "Session not found.",
               "originalRequest": {
                 "url": {
@@ -1754,7 +1754,7 @@
                     {
                       "disabled": false,
                       "type": "any",
-                      "value": "0ae4d729-45cb-69dd-19de-44a04d15a210",
+                      "value": "98edab6c-1077-456c-e10d-85367d0f8f43",
                       "key": "session_id",
                       "description": "(Required) "
                     }
@@ -1785,7 +1785,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": 8872.650925129012,\n      \"key_1\": 3933.495171175586\n    }\n  }\n}",
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": false,\n      \"key_1\": \"string\",\n      \"key_2\": \"string\"\n    }\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -1799,7 +1799,7 @@
       "event": []
     },
     {
-      "id": "e5ae4fcf-b1c9-457e-a884-6ee605fa48e6",
+      "id": "1bbc3c60-b478-4580-92e2-5b9189f1b92e",
       "name": "Transactions",
       "description": {
         "content": "",
@@ -1807,7 +1807,7 @@
       },
       "item": [
         {
-          "id": "7d57b6cc-1a89-4a02-aa45-94d7f05b1e4c",
+          "id": "0178c7dd-6a26-4e1a-a32a-76b76400c98c",
           "name": "List transactions",
           "request": {
             "name": "List transactions",
@@ -1826,7 +1826,7 @@
                 {
                   "disabled": false,
                   "key": "session_id",
-                  "value": "0ae4d729-45cb-69dd-19de-44a04d15a210"
+                  "value": "98edab6c-1077-456c-e10d-85367d0f8f43"
                 },
                 {
                   "disabled": false,
@@ -1836,18 +1836,18 @@
                 {
                   "disabled": false,
                   "key": "type",
-                  "value": "refund"
+                  "value": "win"
                 },
                 {
                   "disabled": false,
                   "key": "from",
-                  "value": "2014-08-20T13:21:53.244Z",
+                  "value": "1979-11-26T07:32:45.324Z",
                   "description": "Inclusive lower bound on `created_at`."
                 },
                 {
                   "disabled": false,
                   "key": "to",
-                  "value": "2014-08-20T13:21:53.244Z",
+                  "value": "1979-11-26T07:32:45.324Z",
                   "description": "Exclusive upper bound on `created_at`."
                 },
                 {
@@ -1874,7 +1874,7 @@
           },
           "response": [
             {
-              "id": "461419cc-5208-4e2c-a9ed-c30b3191322a",
+              "id": "c72fcbab-c059-4241-a0eb-5232e12f2f48",
               "name": "Page of transactions.",
               "originalRequest": {
                 "url": {
@@ -1887,7 +1887,7 @@
                   "query": [
                     {
                       "key": "session_id",
-                      "value": "0ae4d729-45cb-69dd-19de-44a04d15a210"
+                      "value": "98edab6c-1077-456c-e10d-85367d0f8f43"
                     },
                     {
                       "key": "player_id",
@@ -1895,15 +1895,15 @@
                     },
                     {
                       "key": "type",
-                      "value": "refund"
+                      "value": "win"
                     },
                     {
                       "key": "from",
-                      "value": "2014-08-20T13:21:53.244Z"
+                      "value": "1979-11-26T07:32:45.324Z"
                     },
                     {
                       "key": "to",
-                      "value": "2014-08-20T13:21:53.244Z"
+                      "value": "1979-11-26T07:32:45.324Z"
                     },
                     {
                       "key": "page",
@@ -1941,12 +1941,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"transactions\": [\n    {\n      \"id\": \"9b14efff-879d-d535-8f37-f791750ab695\",\n      \"session_id\": \"ed421092-f284-ee86-2cf9-1569d6399255\",\n      \"type\": \"refund\",\n      \"amount\": 1416,\n      \"currency\": \"string\",\n      \"created_at\": \"1972-11-04T21:48:14.360Z\",\n      \"player_id\": \"string\",\n      \"provider_code\": \"string\",\n      \"provider_round_id\": \"string\",\n      \"operator_status\": 1512,\n      \"status\": \"completed\"\n    },\n    {\n      \"id\": \"90a286e8-1fed-3521-23d0-d110843154a9\",\n      \"session_id\": \"950f1e45-8592-f3fb-913f-3666de58a3d8\",\n      \"type\": \"win\",\n      \"amount\": 1379,\n      \"currency\": \"string\",\n      \"created_at\": \"2018-07-17T23:22:07.767Z\",\n      \"player_id\": \"string\",\n      \"provider_code\": \"string\",\n      \"provider_round_id\": \"string\",\n      \"operator_status\": 9949,\n      \"status\": \"error\"\n    }\n  ],\n  \"total\": 7975,\n  \"page\": 5158,\n  \"per_page\": 7929\n}",
+              "body": "{\n  \"transactions\": [\n    {\n      \"id\": \"bd945c97-1719-ec18-4f4c-10916810e5da\",\n      \"session_id\": \"107e907a-15cf-6a1b-4530-278b7711c0cd\",\n      \"type\": \"refund\",\n      \"amount\": 232,\n      \"currency\": \"string\",\n      \"created_at\": \"1970-09-14T09:49:28.809Z\",\n      \"player_id\": \"string\",\n      \"provider_code\": \"string\",\n      \"provider_round_id\": \"string\",\n      \"operator_status\": 4647,\n      \"status\": \"forwarded\"\n    },\n    {\n      \"id\": \"c6075bd4-f67d-3cea-cf20-1f416a1ffb11\",\n      \"session_id\": \"461ccfe2-b59c-bf48-625d-1c1c0a42b706\",\n      \"type\": \"bet\",\n      \"amount\": 9822,\n      \"currency\": \"string\",\n      \"created_at\": \"1957-11-10T19:26:49.113Z\",\n      \"player_id\": \"string\",\n      \"provider_code\": \"string\",\n      \"provider_round_id\": \"string\",\n      \"operator_status\": 4975,\n      \"status\": \"forwarded\"\n    }\n  ],\n  \"total\": 3484,\n  \"page\": 1406,\n  \"per_page\": 3683\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "f607ce72-a94e-40f1-9539-caaf7213391b",
+              "id": "d0117473-e972-435a-b06e-f3c282497b2a",
               "name": "Missing, invalid, or revoked API key.",
               "originalRequest": {
                 "url": {
@@ -1959,7 +1959,7 @@
                   "query": [
                     {
                       "key": "session_id",
-                      "value": "0ae4d729-45cb-69dd-19de-44a04d15a210"
+                      "value": "98edab6c-1077-456c-e10d-85367d0f8f43"
                     },
                     {
                       "key": "player_id",
@@ -1967,15 +1967,15 @@
                     },
                     {
                       "key": "type",
-                      "value": "refund"
+                      "value": "win"
                     },
                     {
                       "key": "from",
-                      "value": "2014-08-20T13:21:53.244Z"
+                      "value": "1979-11-26T07:32:45.324Z"
                     },
                     {
                       "key": "to",
-                      "value": "2014-08-20T13:21:53.244Z"
+                      "value": "1979-11-26T07:32:45.324Z"
                     },
                     {
                       "key": "page",
@@ -2013,7 +2013,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": 8872.650925129012,\n      \"key_1\": 3933.495171175586\n    }\n  }\n}",
+              "body": "{\n  \"error\": {\n    \"code\": \"E0001\",\n    \"message\": \"string\",\n    \"request_id\": \"string\",\n    \"details\": {\n      \"key_0\": false,\n      \"key_1\": \"string\",\n      \"key_2\": \"string\"\n    }\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -2027,7 +2027,7 @@
       "event": []
     },
     {
-      "id": "e792305a-8c10-4162-ba93-5a03efc60468",
+      "id": "05b4fd6e-0c51-4413-a45c-10de8222edda",
       "name": "Health",
       "description": {
         "content": "",
@@ -2035,7 +2035,7 @@
       },
       "item": [
         {
-          "id": "2feaa682-b696-46a2-bc36-cc57d8a72a63",
+          "id": "9b6922d4-f37c-4c57-a2fe-b121373c604f",
           "name": "Liveness probe",
           "request": {
             "name": "Liveness probe",
@@ -2064,7 +2064,7 @@
           },
           "response": [
             {
-              "id": "e4b65201-1eba-4fcb-9a0f-b28cf08e537e",
+              "id": "1ee2ffa8-b51b-4d10-8b32-fb2995c26adc",
               "name": "Service is alive.",
               "originalRequest": {
                 "url": {
@@ -2113,7 +2113,7 @@
           }
         },
         {
-          "id": "e736cbfc-79b7-4150-9f9b-86ddeb185a6c",
+          "id": "3a95a8ef-aeb4-4b17-a459-fe31201ff08c",
           "name": "Readiness probe",
           "request": {
             "name": "Readiness probe",
@@ -2142,7 +2142,7 @@
           },
           "response": [
             {
-              "id": "8c3a68e6-e48d-4b40-8e55-e3fc7abb2587",
+              "id": "1251b422-eb50-4b16-95b3-91f048adc2d9",
               "name": "Service is ready.",
               "originalRequest": {
                 "url": {
@@ -2185,7 +2185,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "96d132ad-8b71-46ba-b1c0-d7e30daee84e",
+              "id": "4a410ea8-dfc9-4c45-88e7-c433aa68a323",
               "name": "Service is not ready (one or more dependencies unreachable).",
               "originalRequest": {
                 "url": {
@@ -2268,7 +2268,7 @@
     ]
   },
   "info": {
-    "_postman_id": "67dae612-f03d-45fa-9bf6-cad6a02771d1",
+    "_postman_id": "c8421e46-e5f5-4c87-a259-0469c5b93cb0",
     "name": "The Aggregator Machine API",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "description": {
