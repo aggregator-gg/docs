@@ -173,7 +173,6 @@ curl -X POST "https://api.aggregator.gg/v1/sessions" \
 {
   "session_id": "8c8e8c8e-8c8e-4c8e-8c8e-8c8e8c8e8c8e",
   "game_url": "https://games.aggregator.gg/launch/8c8e8c8e-8c8e-4c8e-8c8e-8c8e8c8e8c8e",
-  "expires_in": 20,
   "provider_session_uid": "tl_session_abc",
   "provider_code": "truelabs"
 }
@@ -220,7 +219,7 @@ const session = await aggregator.sessions.create(
 - `balance` is in the currency's **minor units** — the ISO-4217 minor unit, determined by the **currency** (not configurable per operator). Every currency The Aggregator currently supports is 2-decimal, so the minor unit is 1/100: `10000` = `100.00 EUR`. (A 0-decimal currency such as JPY would use whole units, but no non-2-decimal currency is enabled today.)
 - `country` determines jurisdiction rules. Games blocked in the player's country return a `403`.
 - `return_url` is where the player lands when they close the game. If omitted, the game closes to a blank page.
-- Sessions expire after `expires_in` seconds. Create a new session if the player returns after expiry.
+- `game_url` is single-use. Create a new session each time the player needs to launch the game.
 
 You can also launch demo sessions (no player credentials required):
 

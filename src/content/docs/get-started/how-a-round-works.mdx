@@ -40,7 +40,7 @@ sequenceDiagram
 
 2. **You create a session.** `POST /v1/sessions` with an `Idempotency-Key` header and `game_id`, `player_id`, `balance`, `currency`, and `country`. The Aggregator returns `session_id` and `game_url`.
 
-3. **You redirect the player.** The `game_url` is a short-lived (20-second) signed URL. Embed it in an iframe or redirect the browser.
+3. **You redirect the player.** The `game_url` is a single-use signed URL. Embed it in an iframe or redirect the browser once — don't cache or reload it.
 
 4. **Provider sends bet callback.** Each spin triggers an HMAC-signed callback to your configured `callback_url`. Verify the signature, debit the player's wallet, return `200`.
 
@@ -52,7 +52,7 @@ sequenceDiagram
 
 ## Important constraints
 
-- **`game_url` expires in 20 seconds.** Create the session immediately before redirecting the player; don't pre-fetch hours in advance.
+- **`game_url` is single-use.** Create the session immediately before redirecting the player; open it once and don't cache, reload, or pre-fetch it.
 - **Callbacks may arrive out-of-order** under network jitter. The Aggregator does best-effort ordering but cannot guarantee strict sequence. Callback dedup by `transaction_id` is on you.
 - **A session can have many bets and wins.** Slot games typically generate one bet and one win per spin; live casino games can interleave them differently.
 - **Failed callback (you return non-2xx) triggers retries** with exponential backoff. See [Wallet callbacks](/guides/wallet-callbacks/) for retry semantics.
