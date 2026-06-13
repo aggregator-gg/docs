@@ -123,8 +123,8 @@ if (!res.ok) {
   throw new Error(`create session failed: ${res.status}`);
 }
 
-const { session_id, game_url, expires_in } = await res.json();
-// Redirect the player to game_url within `expires_in` seconds.
+const { session_id, game_url } = await res.json();
+// Redirect the player to game_url immediately — it is single-use.
 ```
 
 </TabItem>
@@ -166,7 +166,7 @@ if ($status < 200 || $status >= 300) {
 }
 
 $session = json_decode($body, true);
-// Redirect the player to $session['game_url'] within $session['expires_in'] seconds.
+// Redirect the player to $session['game_url'] immediately — it is single-use.
 ```
 
 </TabItem>
@@ -202,7 +202,7 @@ resp = httpx.post(
 resp.raise_for_status()
 
 session = resp.json()
-# Redirect player to session["game_url"] within session["expires_in"] seconds.
+# Redirect player to session["game_url"] immediately — it is single-use.
 ```
 
 </TabItem>

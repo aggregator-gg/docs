@@ -24,8 +24,8 @@ Run these in order during integration. Each step exercises a distinct money-path
 
 - `GET /v1/games` → confirm you receive a populated list.
 - `POST /v1/sessions` with a low-volatility game and a small balance (e.g. EUR 1.00 minor units = 100).
-- Verify the response shape matches your client's expectations — `session_id`, `game_url`, `expires_in: 20`.
-- Redirect a browser to `game_url` within the 20-second window.
+- Verify the response shape matches your client's expectations — `session_id`, `game_url`, `provider_code`.
+- Redirect a browser to `game_url` immediately — it is single-use.
 
 ### 2. Callback signature verification — both happy path and tampered
 
@@ -56,7 +56,7 @@ Force each of these and confirm your handler does the right thing:
 | 5xx callback response | Return `500` from your handler for one spin | Platform retries with exponential backoff per [retry policy](/guides/wallet-callbacks/) |
 | Insufficient balance | Set wallet to less than the next bet amount | Provider receives the rejection, player sees an error |
 | Self-excluded player | Mark the player self-excluded in your system before launching | `POST /v1/sessions` returns `403` with `E3004 player_self_excluded` |
-| Expired session | Wait > 20 seconds before redirecting to `game_url` | Player sees provider error page; no wallet movement |
+| Reused session URL | Open `game_url` a second time after the player has already launched | Player sees provider error page; no wallet movement |
 
 ### 6. Going-live readiness
 

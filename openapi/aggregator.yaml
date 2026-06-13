@@ -167,8 +167,9 @@ paths:
       summary: Create a real-money session
       description: |
         Create a real-money game session. The player is redirected to the
-        returned `game_url` to begin playing. The URL expires in 20 seconds —
-        create the session immediately before redirecting.
+        returned `game_url` to begin playing. The URL is single-use — open it
+        once and do not cache or reload it; create the session immediately
+        before redirecting.
 
         Requires `Idempotency-Key` header. Retries with the same key within
         24 hours return the cached response.
@@ -572,7 +573,7 @@ components:
 
     SessionResponse:
       type: object
-      required: [session_id, game_url, expires_in, provider_code]
+      required: [session_id, game_url, provider_code]
       properties:
         session_id:
           type: string
@@ -581,9 +582,6 @@ components:
           type: string
           format: uri
           description: One-time-use signed URL the player is redirected to.
-        expires_in:
-          type: integer
-          description: Seconds until `game_url` becomes invalid (currently 20).
         provider_session_uid:
           type: string
         provider_code:
