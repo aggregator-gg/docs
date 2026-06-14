@@ -199,13 +199,16 @@ paths:
               schema: { $ref: '#/components/schemas/Error' }
         '403':
           description: |
-            Operator not configured for this provider, game not allowed for
-            operator, jurisdiction blocked, or player self-excluded.
+            Game or player not eligible. The `error.code` distinguishes:
+            `E2002` game not enabled for the operator, `E2003` game blocked in the
+            player's `country` (jurisdiction), `E3004` player self-excluded, or
+            `operator_settings_not_configured` when the operator has no wallet
+            callback configured for the provider.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
         '404':
-          description: Game not found.
+          description: 'Game not found (`error.code` = `E2001`).'
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
@@ -509,6 +512,48 @@ components:
             type: string
             pattern: '^[A-Z]{3}$'
           example: [USD, EUR]
+        min_bet:
+          type: number
+          nullable: true
+          description: |
+            Provider-declared minimum stake per spin, quoted in
+            `bet_limits_currency`. `null` when the provider has not declared it.
+            No FX conversion is applied — the value is exactly as the provider
+            quotes it.
+          example: 0.10
+        max_bet:
+          type: number
+          nullable: true
+          description: |
+            Provider-declared maximum stake per spin, quoted in
+            `bet_limits_currency`. `null` when undeclared.
+          example: 100.0
+        default_bet:
+          type: number
+          nullable: true
+          description: |
+            Provider-declared default stake per spin, quoted in
+            `bet_limits_currency`. `null` when undeclared.
+          example: 1.0
+        bet_limits_currency:
+          type: string
+          nullable: true
+          pattern: '^[A-Z]{3,8}$'
+          description: |
+            The currency the `min_bet` / `max_bet` / `default_bet` values are
+            quoted in (canonical code, fiat or crypto). Present whenever any bet
+            limit is set; `null` when no bet limits are declared. These values are
+            NOT converted to the player's wallet currency — treat them as the
+            provider's reference quote.
+          example: EUR
+        max_win_multiplier:
+          type: number
+          nullable: true
+          description: |
+            Maximum win as a multiple of the stake (e.g. `5000` = 5000×). A
+            currency-agnostic stake multiplier, NOT a money amount. `null` when
+            the provider has not declared it.
+          example: 5000
 
     GameList:
       type: object
@@ -695,6 +740,12 @@ components:
               pattern: '^E[0-9A-F][0-9]{3}$'
               description: Machine-parseable error code. See https://docs.aggregator.gg/resources/error-codes/.
               example: E0001
+            type:
+              type: string
+              description: |
+                Snake-case mnemonic for the `code` (e.g. `game_blocked_jurisdiction`,
+                `player_self_excluded`). Branch on `code`; `type` is for readability.
+              example: game_blocked_jurisdiction
             message:
               type: string
             request_id:
