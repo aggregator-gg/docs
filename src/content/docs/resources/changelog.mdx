@@ -7,6 +7,11 @@ This page records every shipping change to the Machine API. Subscribe by watchin
 
 ---
 
+## 2026-06-14 — structured error codes on session business errors
+
+- ⚠️ **Breaking (error body shape).** `POST /v1/sessions`, `POST /v1/demo-sessions`, and `GET /v1/games/{id}` now return their business errors in the documented nested envelope — `{ "error": { "code", "type", "message" } }` — instead of a flat `{ "error": "<message>" }`. HTTP status codes are unchanged, and successful responses are unchanged. Affected codes: `E2001` `game_not_found` (404), `E2002` `game_not_enabled` (403), `E2003` `game_blocked_jurisdiction` (403), `E3004` `player_self_excluded` (403).
+- ✅ **What to do:** branch on `error.code` (as the [code samples](/guides/code-samples/) and [error reference](/resources/error-codes/) already show). If your integration read `error` as a string for these failures, switch to `error.message`. Matching on HTTP status keeps working unchanged.
+
 ## 2026-05-27 — public status page
 
 - 🆕 **Status page** launched at [status.aggregator.gg](https://status.aggregator.gg). Public uptime + incident history for the four operator-facing surfaces (API, cabinet, marketing site, docs). Subscribe to incident updates via email.
