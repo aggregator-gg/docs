@@ -7,6 +7,12 @@ This page records every shipping change to the Machine API. Subscribe by watchin
 
 ---
 
+## 2026-06-19 — free rounds on the wallet callback
+
+- 🆕 **Free rounds (free spins).** Free-round wallet events now reach your existing callback endpoint as standard `bet` / `win` callbacks carrying a new `is_free: true` flag plus `free_round_grant_id` and `free_round_kind`. No new endpoint or action to implement. See the new [Free rounds](/guides/free-rounds/) guide.
+- ⚠️ **Balance handling.** A `bet` with `is_free: true` is **grant-funded — do not debit the player's real-money balance**; its `amount` is the nominal stake for reporting only. A `win` with `is_free: true` is credited like any win. Branch on `is_free`.
+- ✅ **What to do:** if you have no free-round promotions configured, no action is required — you will not receive `is_free` callbacks. Before enabling free rounds, update your handler per the [Free rounds go-live checklist](/guides/free-rounds/#go-live-checklist--free-rounds).
+
 ## 2026-06-14 — structured error codes on session business errors
 
 - ⚠️ **Breaking (error body shape).** `POST /v1/sessions`, `POST /v1/demo-sessions`, and `GET /v1/games/{id}` now return their business errors in the documented nested envelope — `{ "error": { "code", "type", "message" } }` — instead of a flat `{ "error": "<message>" }`. HTTP status codes are unchanged, and successful responses are unchanged. Affected codes: `E2001` `game_not_found` (404), `E2002` `game_not_enabled` (403), `E2003` `game_blocked_jurisdiction` (403), `E3004` `player_self_excluded` (403).
