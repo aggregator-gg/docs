@@ -71,6 +71,7 @@ export default defineConfig({
 						{ label: 'Integration walkthrough', slug: 'guides/integration' },
 						{ label: 'Code samples', slug: 'guides/code-samples' },
 						{ label: 'Wallet callbacks', slug: 'guides/wallet-callbacks' },
+						{ label: 'Free rounds', slug: 'guides/free-rounds' },
 						{ label: 'Signature verification', slug: 'guides/signature-verification' },
 						{ label: 'Idempotency', slug: 'guides/idempotency' },
 						{ label: 'Testing your integration', slug: 'guides/testing-sandbox' },
