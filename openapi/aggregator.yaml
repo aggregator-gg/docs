@@ -331,6 +331,121 @@ paths:
                 $ref: '#/components/schemas/TransactionList'
         '401': { $ref: '#/components/responses/Unauthorized' }
 
+  /free-rounds:
+    post:
+      summary: Issue free rounds
+      description: |
+        Issue free rounds (free spins) to a player on one or more games. `count`
+        is **per game** — `games: [A, B]` with `count: 10` issues 10 rounds on
+        each (20 total). Not tied to a session; every game must support free
+        rounds and passes the same jurisdiction check as a launch.
+
+        Requires the `write` scope and an `Idempotency-Key` header (same key +
+        same body replays the cached result; same key + different body → 409).
+        Free rounds must be enabled for the provider before issuance succeeds.
+      tags: [FreeRounds]
+      operationId: issueFreeRounds
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/IssueFreeRoundsRequest' }
+      responses:
+        '201':
+          description: Grant issued for all games.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FreeRoundGrantResponse' }
+        '200':
+          description: Idempotent replay of a previously issued grant.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FreeRoundGrantResponse' }
+        '207':
+          description: Partially issued — some games failed (see per-game `status`).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FreeRoundGrantResponse' }
+        '400':
+          description: Validation failed, missing `Idempotency-Key`, or invalid stake.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '403':
+          description: Free rounds disabled for the provider, jurisdiction blocked, or player self-excluded.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: A game does not support free rounds, or the stake is outside its limits.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { $ref: '#/components/responses/IdempotencyConflict' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+    get:
+      summary: List free-round grants
+      description: List your free-round grants, newest first.
+      tags: [FreeRounds]
+      operationId: listFreeRounds
+      parameters:
+        - name: player_id
+          in: query
+          schema: { type: string, maxLength: 128 }
+        - name: status
+          in: query
+          description: Filter by grant status.
+          schema:
+            type: string
+            enum: [active, partially_consumed, consumed, cancelled, expired]
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+        - name: offset
+          in: query
+          schema: { type: integer, minimum: 0, default: 0 }
+      responses:
+        '200':
+          description: List of grants.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FreeRoundGrantList' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /free-rounds/{grant_id}/cancel:
+    post:
+      summary: Cancel a free-round grant
+      description: |
+        Cancel a grant's outstanding (unplayed) rounds. Already-played rounds are
+        not reversed. Requires the `write` scope.
+      tags: [FreeRounds]
+      operationId: cancelFreeRound
+      parameters:
+        - name: grant_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Grant cancelled.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FreeRoundCancelResponse' }
+        '404':
+          description: Grant not found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: Grant is in a terminal state and cannot be cancelled.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
   /health:
     get:
       summary: Liveness probe
@@ -726,6 +841,100 @@ components:
         total: { type: integer }
         page: { type: integer }
         per_page: { type: integer }
+
+    IssueFreeRoundsRequest:
+      type: object
+      required: [provider_code, player_id, games, count, currency, country, start_at, end_at]
+      properties:
+        provider_code: { type: string, minLength: 1, maxLength: 64, example: truelabs }
+        player_id: { type: string, minLength: 1, maxLength: 128 }
+        games:
+          type: array
+          minItems: 1
+          maxItems: 200
+          description: Catalog game UUIDs (from `GET /v1/games`). Every game must support free rounds.
+          items: { type: string, format: uuid }
+        count:
+          type: integer
+          minimum: 1
+          description: 'Rounds **per game** (not total). `games:[A,B]` with `count:10` issues 20 total.'
+        currency: { type: string, minLength: 3, maxLength: 10, example: EUR }
+        country:
+          type: string
+          minLength: 2
+          maxLength: 2
+          description: ISO 3166-1 alpha-2. Checked against jurisdiction rules at issue time.
+        coin_level:
+          type: integer
+          minimum: 1
+          maximum: 24
+          description: Stake level (provider-dependent). Provide exactly one of `coin_level` / `bet_amount`.
+        bet_amount:
+          type: number
+          exclusiveMinimum: 0
+          description: Stake per round in major units (provider-dependent).
+        start_at: { type: string, format: date-time, description: When the rounds become playable. }
+        end_at: { type: string, format: date-time, description: When unplayed rounds expire. }
+        campaign_id: { type: string, maxLength: 128, description: Your campaign reference (optional). }
+        free_round_kind:
+          type: string
+          enum: [freespin, freeticket, voucher]
+          default: voucher
+          description: The kind of free round; echoed back on the settlement callback.
+    FreeRoundGameResult:
+      type: object
+      properties:
+        game_id: { type: string, format: uuid }
+        count: { type: integer }
+        status: { type: string, description: 'Per-game outcome, e.g. active or issue_failed.' }
+        error: { type: string, nullable: true }
+    FreeRoundGrantResponse:
+      type: object
+      properties:
+        grant_id: { type: string, format: uuid }
+        status: { type: string, enum: [active, issue_failed] }
+        provider_code: { type: string }
+        player_id: { type: string }
+        currency: { type: string }
+        count_per_game: { type: integer }
+        total_rounds: { type: integer }
+        start_at: { type: string, format: date-time }
+        end_at: { type: string, format: date-time }
+        games:
+          type: array
+          items: { $ref: '#/components/schemas/FreeRoundGameResult' }
+    FreeRoundCancelResponse:
+      type: object
+      properties:
+        grant_id: { type: string, format: uuid }
+        status: { type: string, enum: [cancelled, cancel_failed] }
+        games:
+          type: array
+          items:
+            type: object
+            properties:
+              game_id: { type: string, format: uuid }
+              status: { type: string }
+              error: { type: string, nullable: true }
+    FreeRoundGrantList:
+      type: object
+      properties:
+        count: { type: integer }
+        grants:
+          type: array
+          items:
+            type: object
+            properties:
+              grant_id: { type: string, format: uuid }
+              status: { type: string }
+              provider_code: { type: string }
+              player_id: { type: string }
+              currency: { type: string }
+              count: { type: integer }
+              rounds_used: { type: integer }
+              start_at: { type: string, format: date-time }
+              end_at: { type: string, format: date-time }
+              created_at: { type: string, format: date-time }
 
     Error:
       type: object

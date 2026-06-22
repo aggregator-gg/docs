@@ -3,9 +3,45 @@ title: "Free Rounds (Free Spins)"
 description: "Free rounds reach your wallet endpoint as standard bet/win callbacks carrying an is_free flag and a free-round grant reference. This guide covers the extra fields, the all-important balance handling (never debit a free bet), provider differences, and the go-live checklist."
 ---
 
-Free rounds (also called free spins) let a player spin a game without staking their own cash — the stake is funded by a grant you or the provider issued, and any winnings are credited to the player. The Aggregator delivers free-round wallet events to your existing callback endpoint. **There is no new endpoint and no new action to implement** — a free round arrives as a normal `bet` / `win` callback with one extra signal: `is_free: true`.
+Free rounds (also called free spins) let a player spin a game without staking their own cash — the stake is funded by a grant you issue, and any winnings are credited to the player.
 
-If you have not yet integrated the standard wallet callback, read [Wallet callbacks](/guides/wallet-callbacks/) first. This guide only describes what is *different* for free rounds.
+There are two sides to free rounds:
+
+- **Issuing** — you call `POST /v1/free-rounds` to grant a player free rounds on one or more games (see [Issuing free rounds](#issuing-free-rounds) below).
+- **Receiving** — the resulting wallet events arrive at your **existing** callback endpoint as ordinary `bet` / `win` callbacks carrying one extra signal, `is_free: true`. **There is no new endpoint to implement on your side to receive them.**
+
+If you have not yet integrated the standard wallet callback, read [Wallet callbacks](/guides/wallet-callbacks/) first. This guide describes what is *different* for free rounds.
+
+---
+
+## Issuing free rounds
+
+Issue a grant with `POST /v1/free-rounds` ([API reference](/api/v1/operations/issuefreerounds/)). `count` is **per game** — `games: [A, B]` with `count: 10` issues 10 rounds on each (20 total). The grant is not tied to a session; each game must support free rounds and passes the same jurisdiction check as a launch.
+
+```bash
+curl -X POST https://api.aggregator.gg/v1/free-rounds \
+  -H "Authorization: Bearer sk_live_..." \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "provider_code": "truelabs",
+    "player_id": "player-123",
+    "games": ["550e8400-e29b-41d4-a716-446655440000"],
+    "count": 10,
+    "currency": "EUR",
+    "country": "DE",
+    "coin_level": 1,
+    "start_at": "2026-07-01T00:00:00Z",
+    "end_at": "2026-07-10T00:00:00Z"
+  }'
+```
+
+- **Scope + idempotency.** Requires the `write` scope and an `Idempotency-Key` header — the same key + same body replays the cached result; same key + different body → `409`.
+- **Stake.** Provide exactly one of `coin_level` or `bet_amount` (which one depends on the game — see the [API reference](/api/v1/operations/issuefreerounds/)).
+- **Response.** You get back a `grant_id` and a per-game `status`. Manage the grant later with `GET /v1/free-rounds` (list) and `POST /v1/free-rounds/{grant_id}/cancel` (cancel unplayed rounds).
+- **Availability.** Free rounds must be enabled for the provider on your account first; until then issuance returns `403`.
+
+The rest of this guide covers the **receiving** side — how the spins reach your wallet endpoint.
 
 :::caution[The one rule that matters most]
 **Never debit the player's real-money balance for a `bet` callback where `is_free` is `true`.** The stake is covered by the free-round grant, not the player's wallet. The `amount` on a free bet is the *nominal* stake (for your reporting / GGR), **not** a real-money charge. A naive integration that debits it will silently take real money from players on every free spin.
@@ -20,8 +56,8 @@ A free-round callback is the standard forward payload (see [Wallet callbacks →
 | Field | Type | Description |
 |-------|------|-------------|
 | `is_free` | `boolean` | `true` when this callback belongs to a free round. **This is the field you branch on.** Absent or `false` on ordinary cash play. |
-| `free_round_grant_id` | `string` | Identifies the free-round grant this spin belongs to. Use it to group a campaign's activity. May be an empty string if the grant could not be resolved (e.g. an operator-issued voucher, or a race) — the spin still settles, just unlinked. |
-| `free_round_kind` | `string \| null` | Provider-defined label for the kind of free round. Informational; safe to ignore. |
+| `free_round_grant_id` | `string` | The `grant_id` of the free-round grant this spin belongs to — use it to group a campaign's activity. May be empty if the spin is not tied to a specific grant. |
+| `free_round_kind` | `string \| null` | The kind of free round, as you set it when issuing (`freespin` / `freeticket` / `voucher`). |
 
 `action`, `transaction_type`, `transaction_id`, `amount`, `currency`, `player_id`, `provider_code`, and `session_id` carry exactly the same meaning and units as on a normal callback — `amount` and `balance` are **integers in minor units** ([details](/guides/wallet-callbacks/#body)). Branch on `transaction_type` and `is_free`, never on `action`.
 
@@ -57,10 +93,10 @@ if (callback.transaction_type === "bet" && callback.is_free) {
 
 ## Provider differences — don't assume a bet always precedes a win
 
-The exact callback sequence depends on the upstream provider. Your handler must cope with both shapes, which is why you branch on `is_free` per callback rather than assuming a `bet` always arrives before a `win`:
+The callback sequence varies by game. Your handler must cope with both shapes, which is why you branch on `is_free` per callback rather than assuming a `bet` always arrives before a `win`:
 
-- **Per-spin providers (e.g. Apparat).** Each free spin produces a `bet` (`is_free: true`, nominal stake) and, on a winning spin, a `win` (`is_free: true`). You will see both legs.
-- **Aggregate-settlement providers (e.g. TRUE LABS).** The whole batch of free rounds settles as a single `win` (`is_free: true`) carrying the total winnings, with `finished: true`. **No `bet` leg is forwarded** — the stakes never touch the wallet path at all. A zero-win batch still settles (you may receive a `win` with `amount: 0`).
+- **Both legs.** Some free rounds produce a free `bet` (`is_free: true`, nominal stake) followed, on a winning spin, by a free `win` (`is_free: true`).
+- **Win only.** Others settle as a single free `win` (`is_free: true`) carrying the total winnings, with `finished: true` — **no free `bet` is sent**. A zero-win round still settles (you may receive a `win` with `amount: 0`).
 
 Treat each callback independently by `transaction_id` and `is_free`. Do not require a matching free `bet` before accepting a free `win`.
 
@@ -95,7 +131,7 @@ The free win — **credit the player**:
   "is_free": true,
   "free_round_grant_id": "9f1c0b3a-2d4e-4a6b-8c0d-1e2f3a4b5c6d",
   "free_round_kind": "freespin",
-  "transaction_id": "freespin:9f1c0b3a-2d4e-4a6b-8c0d-1e2f3a4b5c6d",
+  "transaction_id": "provider-unique-tx-id-2",
   "amount": 450,
   "currency": "EUR",
   "player_id": "player-123",
@@ -111,7 +147,7 @@ Both are signed with your `callback_secret` exactly like any other callback — 
 
 ## Idempotency
 
-No change from the standard contract: use `transaction_id` as your idempotency key and return the same response on a duplicate. The free `win` from an aggregate-settlement provider uses a stable `transaction_id` of the form `freespin:<grant_id>`, so a retried settlement is naturally de-duplicated. See [Idempotency](/guides/idempotency/).
+No change from the standard contract: use `transaction_id` as your idempotency key (treat it as an opaque string) and return the same response on a duplicate. A retried free-round settlement carries the same `transaction_id`, so it de-duplicates naturally. See [Idempotency](/guides/idempotency/).
 
 ---
 
@@ -122,7 +158,7 @@ Complete these in addition to the standard [wallet-callback go-live checklist](/
 - [ ] Your handler reads `is_free` on every callback and branches on it.
 - [ ] A `bet` with `is_free: true` does **not** debit the player's real-money balance.
 - [ ] A `win` with `is_free: true` credits the player (as cash, or as bonus funds per your promo rules).
-- [ ] You do not require a preceding free `bet` before accepting a free `win` (aggregate-settlement providers send only the win).
+- [ ] You do not require a preceding free `bet` before accepting a free `win` (some free rounds settle with only a win).
 - [ ] You handle a free `win` with `amount: 0` (a losing free-round batch still settles).
-- [ ] Idempotency keys off `transaction_id` for free rounds too, including the `freespin:<grant_id>` form.
+- [ ] Idempotency keys off `transaction_id` for free rounds too (treat it as opaque).
 - [ ] You verified the signature on a free-round callback with a known body + secret pair.

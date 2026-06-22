@@ -7,6 +7,10 @@ This page records every shipping change to the Machine API. Subscribe by watchin
 
 ---
 
+## 2026-06-22 — free-rounds issuance API documented
+
+- 🆕 **Issue free rounds via the API.** `POST /v1/free-rounds` (issue), `GET /v1/free-rounds` (list), and `POST /v1/free-rounds/{grant_id}/cancel` (cancel) are now in the [API reference](/api/v1/operations/issuefreerounds/) and the [Free rounds](/guides/free-rounds/#issuing-free-rounds) guide. Requires the `write` scope + `Idempotency-Key`; `count` is per game. The settlement still arrives as the `is_free` wallet callback documented below.
+
 ## 2026-06-19 — free rounds on the wallet callback
 
 - 🆕 **Free rounds (free spins).** Free-round wallet events now reach your existing callback endpoint as standard `bet` / `win` callbacks carrying a new `is_free: true` flag plus `free_round_grant_id` and `free_round_kind`. No new endpoint or action to implement. See the new [Free rounds](/guides/free-rounds/) guide.
