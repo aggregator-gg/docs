@@ -774,6 +774,23 @@ components:
             currency-agnostic stake multiplier, NOT a money amount. `null` when
             the provider has not declared it.
           example: 5000
+        bet_steps:
+          nullable: true
+          description: |
+            The discrete valid-stake ladder for **one** currency, when known —
+            e.g. for issuing free rounds. Single-currency (no FX), so it answers
+            only for `currency`. `null` when no ladder is on file (then use
+            `GET /v1/games/{game_id}/stakes` / provider-side validation).
+          type: object
+          required: [currency, steps]
+          properties:
+            currency:
+              type: string
+              example: EUR
+            steps:
+              type: array
+              items: { type: number }
+              example: [0.20, 0.40, 0.60, 0.80, 1.00, 2.00, 4.00]
 
     GameList:
       type: object
@@ -798,16 +815,18 @@ components:
           nullable: true
           enum: [coin_level, bet_amount]
           description: >-
-            Which field to send to `POST /v1/free-rounds` for this game:
-            `coin_level` for `enumerated` (pick one from `stakes`), `bet_amount`
-            for `provider_validated`, `null` for `unsupported`.
+            Which field to send to `POST /v1/free-rounds` for this game.
+            `coin_level` — pick a `stakes` entry and send its `coin_level`
+            (e.g. TrueLabs). `bet_amount` — send a money amount; when `stakes`
+            is non-empty pick one of its `amount` values, otherwise send any
+            valid amount (e.g. Apparat). `null` for `unsupported`.
         mode:
           type: string
           enum: [enumerated, provider_validated, unsupported]
           description: >-
-            `enumerated` — `stakes` is the authoritative list, send the chosen
-            entry's `coin_level`. `provider_validated` — `stakes` is empty, send
-            a `bet_amount` the provider validates at issue time. `unsupported` —
+            `enumerated` — `stakes` lists the valid stakes; pick one and send it
+            via `stake_field`. `provider_validated` — `stakes` is empty, send a
+            `bet_amount` the provider validates at issue time. `unsupported` —
             the provider has no free-round stake model.
         stakes:
           type: array
@@ -816,14 +835,18 @@ components:
             modes.
           items:
             type: object
-            required: [coin_level, amount]
+            required: [amount]
             properties:
               coin_level:
                 type: integer
-                description: 1-based level to send as `coin_level`.
+                description: >-
+                  1-based level to send as `coin_level`. Present only when
+                  `stake_field` is `coin_level`.
               amount:
                 type: number
-                description: The money stake this level corresponds to, in `currency`.
+                description: >-
+                  The money stake, in `currency`. Send it as `bet_amount` when
+                  `stake_field` is `bet_amount`.
 
     ProviderRegistry:
       type: object

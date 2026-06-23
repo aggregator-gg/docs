@@ -7,9 +7,14 @@ This page records every shipping change to the Machine API. Subscribe by watchin
 
 ---
 
+## 2026-06-23 — bet-step ladder on the catalog + Apparat enumerated stakes
+
+- 🆕 **`bet_steps` on games.** `GET /v1/games` and `GET /v1/games/{id}` now carry an optional `bet_steps` — the discrete valid-stake ladder (`{currency, steps[]}`) for one currency, when on file. Single-currency (no FX), so it answers only for that `currency`; `null` otherwise. See the [Game schema](/api/v1/operations/listgames/).
+- ⬆️ **Apparat free-round stakes are now `enumerated` (EUR).** `GET /v1/games/{id}/stakes?currency=EUR` returns Apparat games as `mode: enumerated` with `stake_field: bet_amount` and the valid `stakes` to pick from, where we hold the ladder (otherwise `provider_validated`, as before). The `stakes[].coin_level` field is now **optional** — present only when `stake_field` is `coin_level`; `amount` is always present. No breaking change to TrueLabs.
+
 ## 2026-06-23 — free-round stake discovery
 
-- 🆕 **`GET /v1/games/{game_id}/stakes?currency=`.** Discover the valid stakes for issuing free rounds on a game in a given currency, so you don't have to guess the `coin_level` / `bet_amount` for `POST /v1/free-rounds`. Branch on the returned `mode`: `enumerated` lists the valid `{coin_level, amount}` stakes (pick one — e.g. TrueLabs); `provider_validated` means submit a `bet_amount` the provider validates at issue time (e.g. Apparat); `unsupported` means the game has no free-round stake model. See the [API reference](/api/v1/operations/getgamestakes/) and the [Free rounds](/guides/free-rounds/#issuing-free-rounds) guide.
+- 🆕 **`GET /v1/games/{game_id}/stakes?currency=`.** Discover the valid stakes for issuing free rounds on a game in a given currency, so you don't have to guess the `coin_level` / `bet_amount` for `POST /v1/free-rounds`. Branch on the returned `mode`: `enumerated` lists the valid stakes (pick one and send it via `stake_field`); `provider_validated` means submit a `bet_amount` the provider validates at issue time; `unsupported` means the game has no free-round stake model. See the [API reference](/api/v1/operations/getgamestakes/) and the [Free rounds](/guides/free-rounds/#issuing-free-rounds) guide.
 
 ## 2026-06-23 — free-round support flag on the game catalog
 
