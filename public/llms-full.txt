@@ -2731,6 +2731,10 @@ This page records every shipping change to the Machine API. Subscribe by watchin
 
 ---
 
+## 2026-06-23 — certified markets on the game catalog
+
+- 🆕 **`certified_markets` on games.** `GET /v1/games` and `GET /v1/games/{id}` now carry an optional `certified_markets` object — the provider-declared allow-list of regulated markets a game is certified for (`regulated`, `dotcom`, `low_barrier`, `other`, `raw`). It's **informational** for filtering your storefront by what your licence permits — **not** a launch gate, and a different axis from `blocked_countries` (which is enforced against the player `country`). `null` when the provider declares no market data. See the [Game schema](/api/v1/operations/listgames/).
+
 ## 2026-06-22 — free-rounds issuance API documented
 
 - 🆕 **Issue free rounds via the API.** `POST /v1/free-rounds` (issue), `GET /v1/free-rounds` (list), and `POST /v1/free-rounds/{grant_id}/cancel` (cancel) are now in the [API reference](/api/v1/operations/issuefreerounds/) and the [Free rounds](/guides/free-rounds/#issuing-free-rounds) guide. Requires the `write` scope + `Idempotency-Key`; `count` is per game. The settlement still arrives as the `is_free` wallet callback documented below.
