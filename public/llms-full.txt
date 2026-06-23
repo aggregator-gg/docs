@@ -2240,7 +2240,10 @@ curl -X POST https://api.aggregator.gg/v1/free-rounds \
 ```
 
 - **Scope + idempotency.** Requires the `write` scope and an `Idempotency-Key` header — the same key + same body replays the cached result; same key + different body → `409`.
-- **Stake.** Provide exactly one of `coin_level` or `bet_amount` (which one depends on the game — see the [API reference](/api/v1/operations/issuefreerounds/)).
+- **Stake.** Provide exactly one of `coin_level` or `bet_amount`. **Which one — and the valid values — depend on the game**, so call [`GET /v1/games/{game_id}/stakes?currency=`](/api/v1/operations/getgamestakes/) first and branch on the `mode` it returns:
+  - `enumerated` → send the `coin_level` of one of the listed `stakes`.
+  - `provider_validated` → send a `bet_amount`; the provider validates it at issue time.
+  - `unsupported` → the game has no free-round stake model.
 - **Response.** You get back a `grant_id` and a per-game `status`. Manage the grant later with `GET /v1/free-rounds` (list) and `POST /v1/free-rounds/{grant_id}/cancel` (cancel unplayed rounds).
 - **Availability.** Free rounds must be enabled for the provider on your account first; until then issuance returns `403`.
 
@@ -2732,6 +2735,10 @@ We will never sunset a major version with less than 180 days notice. Most migrat
 This page records every shipping change to the Machine API. Subscribe by watching [github.com/aggregator-gg/docs](https://github.com/aggregator-gg/docs).
 
 ---
+
+## 2026-06-23 — free-round stake discovery
+
+- 🆕 **`GET /v1/games/{game_id}/stakes?currency=`.** Discover the valid stakes for issuing free rounds on a game in a given currency, so you don't have to guess the `coin_level` / `bet_amount` for `POST /v1/free-rounds`. Branch on the returned `mode`: `enumerated` lists the valid `{coin_level, amount}` stakes (pick one — e.g. TrueLabs); `provider_validated` means submit a `bet_amount` the provider validates at issue time (e.g. Apparat); `unsupported` means the game has no free-round stake model. See the [API reference](/api/v1/operations/getgamestakes/) and the [Free rounds](/guides/free-rounds/#issuing-free-rounds) guide.
 
 ## 2026-06-23 — free-round support flag on the game catalog
 
