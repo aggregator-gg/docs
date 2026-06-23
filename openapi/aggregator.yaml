@@ -609,6 +609,54 @@ components:
             type: string
             pattern: '^[A-Z]{2}$'
           example: [TR, FR]
+        certified_markets:
+          type: object
+          nullable: true
+          description: |
+            Informational allow-list of the regulated markets the game is
+            certified for, as declared by the provider. Use it to filter your
+            storefront to games your licence permits.
+
+            This is **not** a launch gate and is a different axis from
+            `blocked_countries`: `blocked_countries` is a block-list checked
+            against the player `country` at session create, whereas
+            `certified_markets` describes which licences may carry the game. We do
+            not enforce it — choosing which games to offer under your licence is
+            your responsibility. `null` when the provider declares no market data.
+          properties:
+            regulated:
+              type: array
+              description: ISO-3166-1 alpha-2 codes of the certified regulated markets.
+              items:
+                type: string
+                pattern: '^[A-Z]{2}$'
+              example: [DE, EE, GI, IM, MT]
+            dotcom:
+              type: boolean
+              description: |
+                `true` when the game is approved for the international / offshore
+                (".COM", rest-of-world) market — a market *type*, not a country, so
+                it is never expanded into a country list.
+            low_barrier:
+              type: array
+              description: ISO-3166-1 alpha-2 codes of certified low-barrier markets.
+              items:
+                type: string
+                pattern: '^[A-Z]{2}$'
+              example: [AM, LV, MX, ME, RS]
+            other:
+              type: array
+              description: |
+                Certified markets with no ISO country mapping (e.g. territory
+                licensing authorities), preserved verbatim. Omitted when empty.
+              items:
+                type: string
+              example: [Kahnawake]
+            raw:
+              type: string
+              description: |
+                The provider's original markets string. Omitted when the data came
+                only from structured certification fields.
         features:
           type: array
           items: { type: string }
