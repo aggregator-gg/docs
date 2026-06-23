@@ -596,6 +596,13 @@ components:
         thumbnail_url:
           type: string
           format: uri
+        free_rounds_support:
+          type: boolean
+          description: |
+            Whether this game supports free rounds / free spins. When `true` you
+            can issue free rounds on it via `POST /v1/free-rounds`; issuance on a
+            game where this is `false` is rejected at grant time. Filter your
+            free-round campaigns on this field.
         blocked_countries:
           type: array
           description: |
