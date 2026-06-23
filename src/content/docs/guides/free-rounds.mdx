@@ -18,6 +18,8 @@ If you have not yet integrated the standard wallet callback, read [Wallet callba
 
 Issue a grant with `POST /v1/free-rounds` ([API reference](/api/v1/operations/issuefreerounds/)). `count` is **per game** — `games: [A, B]` with `count: 10` issues 10 rounds on each (20 total). The grant is not tied to a session; each game must support free rounds and passes the same jurisdiction check as a launch.
 
+Check `free_rounds_support` on the game (from `GET /v1/games` or `GET /v1/games/{id}`) before issuing — a game where it is `false` is rejected at grant time.
+
 ```bash
 curl -X POST https://api.aggregator.gg/v1/free-rounds \
   -H "Authorization: Bearer sk_live_xxx" \

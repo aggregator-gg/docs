@@ -7,6 +7,10 @@ This page records every shipping change to the Machine API. Subscribe by watchin
 
 ---
 
+## 2026-06-23 — free-round support flag on the game catalog
+
+- 🆕 **`free_rounds_support` on games.** `GET /v1/games` and `GET /v1/games/{id}` now carry a boolean `free_rounds_support` — whether the game supports free rounds / free spins. Use it to find issuable games before calling `POST /v1/free-rounds` (issuance on a `false` game is rejected at grant time). See the [Game schema](/api/v1/operations/listgames/).
+
 ## 2026-06-23 — certified markets on the game catalog
 
 - 🆕 **`certified_markets` on games.** `GET /v1/games` and `GET /v1/games/{id}` now carry an optional `certified_markets` object — the provider-declared allow-list of regulated markets a game is certified for (`regulated`, `dotcom`, `low_barrier`, `other`, `raw`). It's **informational** for filtering your storefront by what your licence permits — **not** a launch gate, and a different axis from `blocked_countries` (which is enforced against the player `country`). `null` when the provider declares no market data. See the [Game schema](/api/v1/operations/listgames/).
