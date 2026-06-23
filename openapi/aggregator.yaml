@@ -141,6 +141,56 @@ paths:
               schema: { $ref: '#/components/schemas/Error' }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
+  /games/{game_id}/stakes:
+    get:
+      summary: Get valid free-round stakes for a game
+      description: |
+        The valid stakes you may use to issue free rounds on this game in a given
+        currency (`POST /v1/free-rounds`). Stakes are **per game, per currency**.
+        Branch on `mode`, not on provider:
+
+        - `enumerated` — we hold the authoritative list (e.g. TrueLabs). Each
+          entry carries the `coin_level` to send and its money `amount`; pick one.
+        - `provider_validated` — we have no list (e.g. Apparat); submit a
+          `bet_amount` and the provider validates it at issue time. `stakes` is
+          empty.
+        - `unsupported` — the provider exposes no free-round stake model
+          (`stake_field` is `null`).
+      tags: [Games]
+      operationId: getGameStakes
+      parameters:
+        - name: game_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: currency
+          in: query
+          required: true
+          description: ISO-4217 currency the stakes are quoted in (e.g. EUR). Stakes are per-currency.
+          schema: { type: string, minLength: 3, maxLength: 10 }
+      responses:
+        '200':
+          description: Valid free-round stakes for the game in the requested currency.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GameStakes' }
+        '400':
+          description: Invalid `game_id` or missing/invalid `currency`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: No game found with that ID.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '502':
+          description: Stakes temporarily unavailable (the provider stakes source was unreachable). Retry.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
   /providers/registry:
     get:
       summary: List registered providers
@@ -735,6 +785,45 @@ components:
         total: { type: integer }
         page: { type: integer }
         per_page: { type: integer }
+
+    GameStakes:
+      type: object
+      required: [game_id, provider_code, currency, stake_field, mode, stakes]
+      properties:
+        game_id: { type: string, format: uuid }
+        provider_code: { type: string, example: truelabs }
+        currency: { type: string, example: EUR }
+        stake_field:
+          type: string
+          nullable: true
+          enum: [coin_level, bet_amount]
+          description: >-
+            Which field to send to `POST /v1/free-rounds` for this game:
+            `coin_level` for `enumerated` (pick one from `stakes`), `bet_amount`
+            for `provider_validated`, `null` for `unsupported`.
+        mode:
+          type: string
+          enum: [enumerated, provider_validated, unsupported]
+          description: >-
+            `enumerated` — `stakes` is the authoritative list, send the chosen
+            entry's `coin_level`. `provider_validated` — `stakes` is empty, send
+            a `bet_amount` the provider validates at issue time. `unsupported` —
+            the provider has no free-round stake model.
+        stakes:
+          type: array
+          description: >-
+            For `enumerated`, the valid stakes (pick one). Empty for the other
+            modes.
+          items:
+            type: object
+            required: [coin_level, amount]
+            properties:
+              coin_level:
+                type: integer
+                description: 1-based level to send as `coin_level`.
+              amount:
+                type: number
+                description: The money stake this level corresponds to, in `currency`.
 
     ProviderRegistry:
       type: object
