@@ -149,12 +149,17 @@ paths:
         currency (`POST /v1/free-rounds`). Stakes are **per game, per currency**.
         Branch on `mode`, not on provider:
 
-        - `enumerated` — we hold the authoritative list (e.g. TrueLabs). Each
-          entry carries the `coin_level` to send and its money `amount`; pick one.
-        - `provider_validated` — we have no list (e.g. Apparat); submit a
-          `bet_amount` and the provider validates it at issue time. `stakes` is
-          empty.
-        - `unsupported` — the provider exposes no free-round stake model
+        - `enumerated` — we hold the authoritative stake list for this game in
+          this currency, so `stakes` is populated; pick one entry and send it via
+          `stake_field`. (TrueLabs always returns its stakes; Apparat returns them
+          per-currency where its API exposes them.)
+        - `provider_validated` — we don't have the exact stakes for this game in
+          this currency, because the provider's API exposes no list for it.
+          `stakes` is empty: submit any `bet_amount`, and the **provider** checks
+          it on its own side when the round is issued — we mirror its accept/reject
+          response back to you. Provider capabilities differ, so the same game may
+          be `enumerated` in one currency and `provider_validated` in another.
+        - `unsupported` — the provider has no free-round stake model at all
           (`stake_field` is `null`).
       tags: [Games]
       operationId: getGameStakes
@@ -824,10 +829,16 @@ components:
           type: string
           enum: [enumerated, provider_validated, unsupported]
           description: >-
-            `enumerated` — `stakes` lists the valid stakes; pick one and send it
-            via `stake_field`. `provider_validated` — `stakes` is empty, send a
-            `bet_amount` the provider validates at issue time. `unsupported` —
-            the provider has no free-round stake model.
+            How to choose a stake. `enumerated` — we hold the authoritative list
+            for this game+currency; `stakes` is populated, pick one and send it via
+            `stake_field`. `provider_validated` — we don't know the exact stakes in
+            this currency for this provider (its API has no endpoint that returns
+            them); `stakes` is empty, so send any `bet_amount` and the provider
+            validates it on its own side when the round is issued, mirroring its
+            accept/reject back to you. `unsupported` — the provider has no
+            free-round stake model at all. Provider capabilities differ: TrueLabs
+            always returns its stakes (`enumerated`), while a provider like Apparat
+            may be `provider_validated` for currencies it doesn't enumerate.
         stakes:
           type: array
           description: >-
